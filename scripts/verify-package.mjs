@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,6 +27,11 @@ function pnpm(cwd, ...args) {
 
 pnpm(root, "build");
 pnpm(root, "pack", "--pack-destination", run);
+const archives = readdirSync(run).filter((name) => name.endsWith(".tgz"));
+if (archives.length !== 1) {
+  throw new Error(`Expected one tarball from pnpm pack, found ${archives.length}`);
+}
+const [archive] = archives;
 for (const name of ["package.json", "tsconfig.json"]) {
   copyFileSync(join(root, "fixtures/consumer", name), join(run, name));
 }
@@ -43,10 +49,14 @@ const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const fixturePath = join(run, "package.json");
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
 fixture.dependencies[manifest.name] =
-  `file:./${manifest.name}-${manifest.version}.tgz`;
+  `file:./${archive}`;
 writeFileSync(fixturePath, JSON.stringify(fixture, null, 2) + "\n");
 
-pnpm(run, "install", "--offline");
+// Reuse locked registry resolutions. Only the generated file dependency and
+// fixture's importer need to be resolved for this temporary install.
+copyFileSync(join(root, "pnpm-lock.yaml"), join(run, "pnpm-lock.yaml"));
+pnpm(run, "install", "--prefer-offline", "--no-frozen-lockfile");
 pnpm(run, "build");
 writeFileSync(join(dir, "current"), run + "\n");
+writeFileSync(join(dir, "tarball"), join(run, archive) + "\n");
 console.log(`\nIndependent packed-package consumer built in ${run}`);

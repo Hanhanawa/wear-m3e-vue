@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.3'
+          package-manager-cache: false
+      - name: Install locked dependencies
+        run: corepack pnpm install --frozen-lockfile
+      - name: Check types and run unit tests
+        run: |
+          corepack pnpm check
+          corepack pnpm test
+      - name: Build and verify the packed consumer
+        run: corepack pnpm verify:package
+      - name: Install Playwright Chromium
+        run: corepack pnpm exec playwright install --with-deps --only-shell chromium
+      - name: Test the packed consumer in Chromium
+        env:
+          WEAR_URL: http://127.0.0.1:4287
+        run: |
+          consumer=$(cat .consumer/current)
+          log="$RUNNER_TEMP/wear-consumer-preview.log"
+          corepack pnpm --dir "$consumer" preview --port 4287 --strictPort >"$log" 2>&1 &
+          preview=$!
+          cleanup() {
+            status=$?
+            kill "$preview" 2>/dev/null || true
+            if (( status != 0 )); then cat "$log"; fi
+          }
+          trap cleanup EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent "$WEAR_URL/" >/dev/null; then break; fi
+            kill -0 "$preview"
+            sleep 1
+          done
+          curl --fail --silent --show-error "$WEAR_URL/" >/dev/null
+          corepack pnpm test:browser
+          corepack pnpm test:catalog
+      - name: Stage the tested archive and SHA-256 checksum
+        run: |
+          archive=$(cat .consumer/tarball)
+          mkdir -p artifacts/package
+          cp -- "$archive" artifacts/package/
+          cd artifacts/package
+          sha256sum -- "${archive##*/}" > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - name: Upload the tested package
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: wear-m3e-vue-package
+          path: artifacts/package/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
