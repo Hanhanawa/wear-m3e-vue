@@ -1,0 +1,47 @@
+{
+  "name": "wear-m3e-vue",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vue components for round Wear Material 3 Expressive layouts",
+  "type": "module",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "SOURCES.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/wear-m3e-vue.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build && vue-tsc -p tsconfig.build.json",
+    "check": "vue-tsc --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "example": "vite examples/watch --host 127.0.0.1 --config examples/watch/vite.config.ts",
+    "verify:package": "node scripts/verify-package.mjs",
+    "test:browser": "node tests/browser.mjs"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.11",
+    "playwright": "1.65.1",
+    "typescript": "6.0.3",
+    "vite": "8.3.8",
+    "vue": "3.5.45",
+    "vue-tsc": "3.3.14"
+  }
+}

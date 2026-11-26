@@ -1,0 +1,345 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+.wear-app {
+  --wear-color-background: #000;
+  --wear-color-on-background: #f2edf5;
+  --wear-color-primary: #eaddff;
+  --wear-color-on-primary: #261347;
+  --wear-color-surface: #302a39;
+  --wear-color-on-surface: #f2edf5;
+  --wear-color-on-surface-variant: #cec4d5;
+  --wear-color-warning-container: #693b04;
+  --wear-color-on-warning-container: #ffdfa8;
+  --wear-color-error-container: #8c1d18;
+  --wear-color-on-error-container: #f9dedc;
+  --wear-color-indicator-track: #1e1c21;
+  --wear-color-indicator-inactive: #77727c;
+  --wear-color-indicator-active: #fff;
+  --wear-unit: 1px;
+  --wear-font-scale: 1;
+  --wear-touch-target: calc(48 * var(--wear-unit));
+  --wear-type-title: calc(20 * var(--wear-unit) * var(--wear-font-scale));
+  --wear-type-label: calc(16 * var(--wear-unit) * var(--wear-font-scale));
+  --wear-type-detail: calc(14 * var(--wear-unit) * var(--wear-font-scale));
+  --wear-radius-large: calc(26 * var(--wear-unit));
+  --wear-top-clearance: 16%;
+  --wear-bottom-clearance: 18%;
+  --wear-side-clearance: 7.3%;
+  --wear-gap: calc(4 * var(--wear-unit));
+  container-type: size;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--wear-color-on-background);
+  background: var(--wear-color-background);
+  font-family: "Roboto", system-ui, sans-serif;
+}
+
+.wear-frame {
+  position: relative;
+  isolation: isolate;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: hidden;
+  font-size: var(--wear-type-label);
+  color-scheme: dark;
+}
+
+.wear-frame[data-round="true"] {
+  inline-size: min(100cqi, 100cqb);
+  block-size: min(100cqi, 100cqb);
+  border-radius: 50%;
+}
+
+/* Scope box sizing and wrap rules so embedding apps keep their own reset. */
+.wear-frame,
+.wear-frame :where(*) {
+  box-sizing: border-box;
+}
+
+.wear-time,
+.wear-time svg,
+.wear-page-indicator,
+.wear-scroll-indicator,
+.wear-pane,
+.wear-pager,
+.wear-list,
+.wear-list-viewport {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.wear-time,
+.wear-page-indicator,
+.wear-scroll-indicator {
+  pointer-events: none;
+}
+
+.wear-time {
+  z-index: 4;
+  text-align: center;
+  padding-block-start: calc(6 * var(--wear-unit));
+}
+
+.wear-time svg text {
+  fill: var(--wear-color-on-background);
+  stroke: var(--wear-color-background);
+  stroke-width: 2.4;
+  paint-order: stroke fill;
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.wear-page-indicator {
+  z-index: 3;
+  overflow: visible;
+}
+
+.wear-page-indicator-track,
+.wear-page-indicator-current-path,
+.wear-scroll-indicator path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.wear-page-indicator-track {
+  stroke: var(--wear-color-indicator-track);
+  stroke-width: 13;
+}
+
+.wear-page-indicator-dot {
+  fill: var(--wear-color-indicator-inactive);
+}
+.wear-page-indicator-current {
+  fill: var(--wear-color-indicator-active);
+}
+.wear-page-indicator-current-path {
+  stroke: var(--wear-color-indicator-active);
+  stroke-width: 6.2;
+}
+
+.wear-pager {
+  overflow: hidden;
+  outline: none;
+}
+
+.wear-pane {
+  transform: translate3d(var(--wear-page-shift, 0%), 0, 0)
+    scale(var(--wear-page-scale, 1));
+  transition: transform 270ms cubic-bezier(0.2, 0.82, 0.25, 1);
+  outline: none;
+}
+
+.wear-pane[data-active="false"] {
+  pointer-events: none;
+}
+.wear-pager[data-dragging="true"] > .wear-pane {
+  transition: none;
+}
+
+.wear-pager:focus-visible,
+.wear-list-viewport:focus-visible {
+  outline: 2px solid var(--wear-color-primary);
+  outline-offset: -3px;
+  border-radius: inherit;
+}
+
+.wear-list-viewport {
+  overflow: hidden auto;
+  overscroll-behavior-block: contain;
+  scrollbar-width: none;
+  overflow-anchor: none;
+}
+
+.wear-frame[data-round="true"] .wear-list-viewport {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 10%,
+    black 17%,
+    black 85%,
+    transparent 95%
+  );
+}
+
+.wear-list-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.wear-list-track {
+  display: grid;
+  align-content: start;
+  gap: var(--wear-gap);
+  min-block-size: 100%;
+  padding: var(--wear-top-clearance) var(--wear-side-clearance)
+    var(--wear-bottom-clearance);
+}
+
+.wear-list-item {
+  min-inline-size: 0;
+  --wear-item-scale: 1;
+  --wear-item-alpha: 1;
+}
+
+.wear-list-item[data-effect="content"] > .wear-list-content,
+.wear-list-item[data-effect="surface"] .wear-surface-visual {
+  transform: scale(var(--wear-item-scale));
+  opacity: var(--wear-item-alpha);
+}
+
+.wear-list-item:has(:focus-visible) {
+  --wear-item-scale: 1 !important;
+  --wear-item-alpha: 1 !important;
+}
+
+.wear-scroll-indicator path:first-child {
+  stroke: var(--wear-color-indicator-track);
+  stroke-width: 4.5;
+}
+
+.wear-scroll-indicator path:last-child {
+  stroke: var(--wear-color-on-surface-variant);
+  stroke-width: 4.5;
+}
+
+.wear-scroll-indicator:dir(rtl) {
+  transform: scaleX(-1);
+}
+
+.wear-title {
+  margin: 0;
+  padding: calc(5 * var(--wear-unit)) 0 calc(7 * var(--wear-unit));
+  font-size: var(--wear-type-title);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.wear-surface {
+  display: grid;
+  inline-size: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+button.wear-surface {
+  min-inline-size: var(--wear-touch-target);
+  min-block-size: var(--wear-touch-target);
+  cursor: pointer;
+}
+
+.wear-surface-visual {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--wear-unit));
+  padding: calc(9 * var(--wear-unit)) calc(13 * var(--wear-unit));
+  border-radius: var(--wear-radius-large);
+  background: var(--wear-color-surface);
+  color: var(--wear-color-on-surface);
+  line-height: 1.25;
+}
+
+.wear-status-card .wear-surface-visual {
+  min-block-size: calc(54 * var(--wear-unit));
+}
+
+.wear-status-card[data-tone="primary"] .wear-surface-visual {
+  color: var(--wear-color-on-primary);
+  background: var(--wear-color-primary);
+}
+
+.wear-alert .wear-surface-visual {
+  min-block-size: calc(38 * var(--wear-unit));
+  color: var(--wear-color-on-warning-container);
+  background: var(--wear-color-warning-container);
+  font-size: var(--wear-type-detail);
+  font-weight: 600;
+}
+
+.wear-alert[data-tone="error"] .wear-surface-visual {
+  color: var(--wear-color-on-error-container);
+  background: var(--wear-color-error-container);
+}
+
+.wear-surface-icon {
+  inline-size: calc(22 * var(--wear-unit));
+  block-size: calc(22 * var(--wear-unit));
+  flex: none;
+}
+
+.wear-surface-icon > svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.wear-surface-copy {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.wear-surface-title,
+.wear-surface-detail {
+  display: block;
+}
+.wear-surface-title {
+  font-weight: 550;
+}
+.wear-surface-detail {
+  font-size: var(--wear-type-detail);
+}
+
+.wear-surface:focus-visible {
+  outline: 2px solid var(--wear-color-primary);
+  outline-offset: -2px;
+  border-radius: var(--wear-radius-large);
+}
+
+.wear-surface:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.wear-visually-hidden,
+.wear-pager-access:not(:focus-visible) {
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  inline-size: 1px;
+  block-size: 1px;
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+}
+
+.wear-pager-access:focus-visible {
+  position: absolute;
+  z-index: 5;
+  inset-block-start: 24%;
+  inset-inline-start: 15%;
+  inline-size: 70%;
+  min-block-size: var(--wear-touch-target);
+  border: 2px solid var(--wear-color-on-primary);
+  border-radius: var(--wear-radius-large);
+  background: var(--wear-color-primary);
+  color: var(--wear-color-on-primary);
+  font: inherit;
+  outline: 2px solid var(--wear-color-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wear-pane {
+    transition: none;
+    --wear-page-scale: 1 !important;
+  }
+  .wear-frame[data-round="true"] .wear-list-track {
+    padding-inline: max(14%, var(--wear-side-clearance));
+  }
+}
