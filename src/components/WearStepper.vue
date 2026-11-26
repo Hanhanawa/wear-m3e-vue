@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import WearButton from "./WearButton.vue";
+import WearRangeIcon from "./WearRangeIcon.vue";
 import { useWearRange } from "../range";
 import { useWearRotary } from "../input";
 
@@ -18,22 +19,31 @@ const props = withDefaults(
 );
 const model = defineModel<number>();
 const root = ref<HTMLElement>();
-const { min, max, step, value, ratio, change } = useWearRange(props, model);
-useWearRotary(root, (delta) => {
-  if (!props.disabled) change(value.value + Math.sign(delta) * step.value);
-});
+const { min, max, value, ratio, change, adjust, buttonEvents } =
+  useWearRange(props, model);
+const decreaseEvents = buttonEvents(-1);
+const increaseEvents = buttonEvents(1);
+useWearRotary(root, adjust);
 
 function key(event: KeyboardEvent) {
   if (props.disabled || event.target !== root.value) return;
-  const changes: Record<string, number> = {
-    ArrowUp: value.value + step.value,
-    ArrowDown: value.value - step.value,
-    Home: min.value,
-    End: max.value,
-  };
-  if (!(event.key in changes)) return;
+  switch (event.key) {
+    case "ArrowUp":
+      adjust(1);
+      break;
+    case "ArrowDown":
+      adjust(-1);
+      break;
+    case "Home":
+      change(min.value);
+      break;
+    case "End":
+      change(max.value);
+      break;
+    default:
+      return;
+  }
   event.preventDefault();
-  change(changes[event.key]);
 }
 </script>
 
@@ -50,11 +60,12 @@ function key(event: KeyboardEvent) {
     <WearButton
       shape="round"
       variant="tonal"
+      class="wear-stepper-button"
       :aria-label="increaseLabel"
       :disabled="disabled || value >= max"
-      @click="change(value + step)"
+      v-on="increaseEvents"
       ><slot name="increase"
-        ><span aria-hidden="true">+</span></slot
+        ><WearRangeIcon increase /></slot
       ></WearButton
     >
     <output class="wear-stepper-value"
@@ -63,11 +74,12 @@ function key(event: KeyboardEvent) {
     <WearButton
       shape="round"
       variant="tonal"
+      class="wear-stepper-button"
       :aria-label="decreaseLabel"
       :disabled="disabled || value <= min"
-      @click="change(value - step)"
+      v-on="decreaseEvents"
       ><slot name="decrease"
-        ><span aria-hidden="true">−</span></slot
+        ><WearRangeIcon /></slot
       ></WearButton
     >
   </div>

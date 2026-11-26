@@ -122,7 +122,8 @@ const removed = ref(false);
 const refresh = ref(false);
 const refreshes = ref(0);
 const ambient = ref(false);
-const timer = ref(0);
+let refreshTimer: number | undefined;
+let ambientTimer: number | undefined;
 const count = ref(72);
 const gesture = ref<HTMLElement>();
 const hints = ref(0);
@@ -152,8 +153,8 @@ function navigate(route: string, label: string) {
   stack.value.push({ id: `${route}-${stack.value.length}`, route, label });
 }
 function finishRefresh() {
-  window.clearTimeout(timer.value);
-  timer.value = window.setTimeout(() => {
+  window.clearTimeout(refreshTimer);
+  refreshTimer = window.setTimeout(() => {
     refresh.value = false;
     refreshes.value += 1;
   }, 500);
@@ -163,12 +164,15 @@ function stimulate() {
 }
 function previewAmbient() {
   ambient.value = true;
-  window.clearTimeout(timer.value);
-  timer.value = window.setTimeout(() => {
+  window.clearTimeout(ambientTimer);
+  ambientTimer = window.setTimeout(() => {
     ambient.value = false;
   }, 1500);
 }
-onUnmounted(() => window.clearTimeout(timer.value));
+onUnmounted(() => {
+  window.clearTimeout(refreshTimer);
+  window.clearTimeout(ambientTimer);
+});
 </script>
 
 <template>
@@ -663,10 +667,40 @@ onUnmounted(() => window.clearTimeout(timer.value));
                     @secondary="details++"
                     @undo="removed = false"
                   >
-                    <WearTitleCard
-                      ><template #title>Morning walk</template>Swipe to see
-                      actions</WearTitleCard
-                    >
+                    <template #secondary>
+                      <span class="wear-icon" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          focusable="false"
+                        >
+                          <path d="M4 9h16v11H4zM3 4h18v5H3zM9 13h6" />
+                        </svg>
+                      </span>
+                    </template>
+                    <template #primary>
+                      <span class="wear-icon" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          focusable="false"
+                        >
+                          <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" />
+                        </svg>
+                      </span>
+                    </template>
+                    <WearTitleCard>
+                      <template #title>Morning walk</template>
+                      <WearText variant="detail">Swipe to see actions</WearText>
+                    </WearTitleCard>
                   </WearSwipeToReveal></WearListItem
                 >
                 <WearListItem effect="none"

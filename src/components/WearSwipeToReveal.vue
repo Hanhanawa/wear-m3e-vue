@@ -36,8 +36,9 @@ const swipe = useWearSwipe(root, {
       open.value = distance * direction.value > 0;
   },
 });
-const transform = computed(() => ({
-  transform: `translateX(calc(${open.value ? direction.value : 0} * (100% - var(--wear-touch-target)) + ${swipe.distance.value}px))`,
+const revealStyle = computed(() => ({
+  "--wear-reveal-direction": direction.value,
+  "--wear-reveal-drag": `${swipe.distance.value * direction.value}px`,
 }));
 
 function begin(event: TouchEvent) {
@@ -49,6 +50,16 @@ function action(which: "primary" | "secondary") {
   if (which === "primary") emit("primary");
   else emit("secondary");
 }
+
+function escape(event: KeyboardEvent) {
+  if (!open.value) return;
+  event.stopPropagation();
+  event.preventDefault();
+  open.value = false;
+  root.value
+    ?.querySelector<HTMLElement>(".wear-reveal-access")
+    ?.focus({ preventScroll: true });
+}
 </script>
 
 <template>
@@ -58,12 +69,14 @@ function action(which: "primary" | "secondary") {
     :data-open="open"
     :data-secondary="!!secondaryLabel"
     :data-dragging="swipe.dragging.value"
+    :style="revealStyle"
     data-wear-gesture-ignore
     @touchstart.passive="begin"
     @touchmove="swipe.move"
     @touchend.passive="swipe.end"
     @touchcancel.passive="swipe.reset"
     @click.capture="swipe.click"
+    @keydown.esc="escape"
   >
     <div v-if="undone" class="wear-reveal-undo">
       <slot name="undo"
@@ -73,11 +86,11 @@ function action(which: "primary" | "secondary") {
       >
     </div>
     <template v-else>
-      <div class="wear-reveal-actions" :inert="!open">
+      <div class="wear-reveal-actions" :inert="!open" :aria-hidden="!open">
         <button
           v-if="secondaryLabel"
           type="button"
-          class="wear-control"
+          class="wear-control wear-reveal-secondary"
           :aria-label="secondaryLabel"
           :disabled="disabled"
           @click="action('secondary')"
@@ -86,7 +99,7 @@ function action(which: "primary" | "secondary") {
         </button>
         <button
           type="button"
-          class="wear-control"
+          class="wear-control wear-reveal-primary"
           :aria-label="primaryLabel"
           :disabled="disabled"
           @click="action('primary')"
@@ -94,7 +107,7 @@ function action(which: "primary" | "secondary") {
           <slot name="primary">{{ primaryLabel }}</slot>
         </button>
       </div>
-      <div class="wear-reveal-content" :style="transform" :inert="open">
+      <div class="wear-reveal-content" :inert="open" :aria-hidden="open">
         <slot />
       </div>
       <button
@@ -105,7 +118,24 @@ function action(which: "primary" | "secondary") {
         :aria-label="open ? closeLabel : moreLabel"
         @click="open = !open"
       >
-        <span aria-hidden="true">{{ open ? "×" : "···" }}</span>
+        <span class="wear-icon" aria-hidden="true">
+          <svg
+            v-if="open"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            focusable="false"
+          >
+            <path d="m7 7 10 10M17 7 7 17" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="currentColor" focusable="false">
+            <circle cx="6" cy="12" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="18" cy="12" r="1.5" />
+          </svg>
+        </span>
       </button>
     </template>
   </div>

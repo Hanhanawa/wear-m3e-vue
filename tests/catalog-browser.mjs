@@ -223,6 +223,65 @@ await check("range clamping and rotary input", async () => {
   await page.close();
 });
 
+await check("range icons, rapid steps and hold-to-repeat", async () => {
+  const { page, frame, errors } = await setup("slider", 240, 0.8, 1.35, "rtl");
+  const sliders = frame.locator(".wear-slider");
+  const slider = sliders.first();
+  const volume = slider.getByRole("slider");
+  const stepper = frame.getByRole("group", { name: "Repetitions" });
+
+  for (const control of [slider, stepper]) {
+    for (const name of ["Increase", "Decrease"]) {
+      const button = control.getByRole("button", { name });
+      await centered(button);
+      const [target, icon] = await Promise.all([
+        button.boundingBox(),
+        button.locator("svg").boundingBox(),
+      ]);
+      assert.ok(Math.abs(target.x + target.width / 2 - icon.x - icon.width / 2) < 1);
+      assert.ok(Math.abs(target.y + target.height / 2 - icon.y - icon.height / 2) < 1);
+    }
+  }
+
+  await centered(slider);
+  const plus = slider.getByRole("button", { name: "Increase" });
+  await plus.dblclick();
+  assert.equal(await volume.inputValue(), "60");
+  await plus.evaluate((button) => {
+    button.click();
+    button.click();
+  });
+  assert.equal(await volume.inputValue(), "80");
+  const track = slider.locator(".wear-slider-track");
+  await track.tap({ position: { x: 4, y: 4 } });
+  assert.equal(await volume.inputValue(), "80");
+
+  await stepper.evaluate((group) => {
+    const [plus, minus] = group.querySelectorAll("button");
+    plus.click();
+    minus.click();
+    minus.click();
+  });
+  assert.match(await stepper.locator("output").innerText(), /^2/);
+
+  const minus = slider.getByRole("button", { name: "Decrease" });
+  await centered(minus);
+  const box = await minus.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.clock.install();
+  await page.clock.pauseAt(Date.now() + 200);
+  await page.mouse.down();
+  await page.clock.runFor(499);
+  assert.equal(await volume.inputValue(), "80");
+  await page.clock.runFor(61);
+  assert.equal(await volume.inputValue(), "60");
+  await page.mouse.up();
+  await page.clock.runFor(120);
+  assert.equal(await volume.inputValue(), "60");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 for (const diameter of [192, 240]) {
   await check(`dialogs focus and geometry ${diameter}`, async () => {
     const { page, frame, errors } = await setup("dialogs", diameter, 0.8, 1.35);
@@ -445,6 +504,52 @@ await check("touch reveal and edge dismiss", async () => {
   await frame.getByRole("button", { name: "Close actions" }).tap();
   await swipe(page, [6, 120], [130, 120]);
   await frame.getByRole("heading", { name: "Wear M3E", exact: true }).waitFor();
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+await check("reveal keeps a single row and keyboard actions in RTL", async () => {
+  const { page, frame, errors } = await setup("gestures", 192, 0.8, 1.35, "rtl");
+  const actions = frame.getByRole("button", { name: "Actions", exact: true });
+  const reveal = frame.locator(".wear-reveal");
+  await centered(actions);
+  const closed = await reveal.boundingBox();
+  assert.equal(await frame.getByRole("button", { name: "Delete" }).count(), 0);
+  await actions.focus();
+  await page.keyboard.press("Enter");
+  const close = frame.getByRole("button", { name: "Close actions" });
+  const archive = frame.getByRole("button", { name: "Archive" });
+  const remove = frame.getByRole("button", { name: "Delete" });
+  const [opened, closeBox, archiveBox, removeBox] = await Promise.all(
+    [reveal, close, archive, remove].map((locator) => locator.boundingBox()),
+  );
+  assert.equal(opened.height, closed.height);
+  assert.ok(removeBox.x < archiveBox.x && archiveBox.x < closeBox.x);
+  for (const box of [closeBox, archiveBox, removeBox]) {
+    assert.ok(box.width >= 47.5 && box.height >= 47.5);
+    assert.ok(Math.abs(box.y + box.height / 2 - opened.y - opened.height / 2) < 1);
+  }
+  await archive.focus();
+  await page.keyboard.press("Escape");
+  assert.equal(await actions.getAttribute("aria-expanded"), "false");
+  assert.equal(await actions.evaluate((button) => document.activeElement === button), true);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+await check("pull-to-refresh is centered at watch scale and only fires past the threshold", async () => {
+  const { page, frame, errors } = await setup("gestures", 192, 0.6, 1.35, "rtl");
+  const refresh = frame.getByRole("button", { name: /^Refresh data/ });
+  await swipe(page, [96, 66], [96, 120]);
+  assert.match(await refresh.innerText(), /0 updates/);
+  await swipe(page, [96, 66], [96, 150]);
+  const progress = frame.getByRole("progressbar", { name: "Refreshing" });
+  await progress.waitFor();
+  const box = await progress.boundingBox();
+  assert.ok(Math.abs(box.x + box.width / 2 - 96) < 1);
+  assert.ok(Math.abs(box.y + box.height / 2 - 48) < 1);
+  await frame.getByText("1 updates", { exact: true }).waitFor();
+  assert.equal(await progress.count(), 0);
   assert.deepEqual(errors, []);
   await page.close();
 });

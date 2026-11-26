@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { useWearRange } from "../range";
 import { useWearRotary } from "../input";
+import WearRangeIcon from "./WearRangeIcon.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -19,7 +20,10 @@ const props = withDefaults(
 );
 const model = defineModel<number>();
 const root = ref<HTMLElement>();
-const { min, max, step, value, ratio, change } = useWearRange(props, model);
+const { min, max, step, value, ratio, change, adjust, buttonEvents } =
+  useWearRange(props, model);
+const decreaseEvents = buttonEvents(-1);
+const increaseEvents = buttonEvents(1);
 const segments = computed(() =>
   props.segmented
     ? Math.min(
@@ -28,9 +32,7 @@ const segments = computed(() =>
       )
     : 1,
 );
-useWearRotary(root, (delta) => {
-  if (!props.disabled) change(value.value + Math.sign(delta) * step.value);
-});
+useWearRotary(root, adjust);
 
 function input(event: Event) {
   change((event.target as HTMLInputElement).valueAsNumber);
@@ -49,9 +51,9 @@ function input(event: Event) {
       class="wear-control wear-slider-button"
       :aria-label="decreaseLabel"
       :disabled="disabled || value <= min"
-      @click="change(value - step)"
+      v-on="decreaseEvents"
     >
-      <slot name="decrease"><span aria-hidden="true">−</span></slot>
+      <slot name="decrease"><WearRangeIcon /></slot>
     </button>
     <span
       class="wear-slider-track"
@@ -60,6 +62,7 @@ function input(event: Event) {
         '--wear-range-segments': segments,
       }"
       :data-segmented="segmented"
+      @click.stop
     >
       <span class="wear-slider-fill" aria-hidden="true" />
       <input
@@ -79,9 +82,9 @@ function input(event: Event) {
       class="wear-control wear-slider-button"
       :aria-label="increaseLabel"
       :disabled="disabled || value >= max"
-      @click="change(value + step)"
+      v-on="increaseEvents"
     >
-      <slot name="increase"><span aria-hidden="true">+</span></slot>
+      <slot name="increase"><WearRangeIcon increase /></slot>
     </button>
   </div>
 </template>
