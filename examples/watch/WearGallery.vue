@@ -74,7 +74,7 @@ import {
   WearCurvedRow,
   WearOneHandedGestureClickIndicator,
   type WearNavigationEntry,
-} from "wear-m3e-vue";
+} from "@hanhanawa/wear-m3e-vue";
 
 const query = new URLSearchParams(location.search);
 const categories = [
