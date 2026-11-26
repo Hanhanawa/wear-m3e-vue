@@ -90,6 +90,27 @@ async function fullRound(diameter, scale) {
     "none",
   );
 
+  const indicator = frame.locator(".wear-pane[data-active=true] .wear-scroll-indicator");
+  const thumb = indicator.locator(".wear-scroll-indicator-thumb path");
+  await thumb.waitFor();
+  const arc = await indicator.evaluate((svg) => {
+    const thumb = svg.querySelector(".wear-scroll-indicator-thumb path");
+    const track = svg.querySelector(".wear-scroll-indicator-track path");
+    const start = thumb.getPointAtLength(0);
+    const end = thumb.getPointAtLength(thumb.getTotalLength());
+    const next = track.getPointAtLength(0);
+    const stroke = Number(thumb.getAttribute("stroke-width"));
+    return {
+      height: svg.getBoundingClientRect().height,
+      stroke,
+      gap: Math.hypot(next.x - end.x, next.y - end.y) - stroke,
+      thumbY: start.y,
+    };
+  });
+  assert.ok(Math.abs(arc.height * scale - 60) < 0.05);
+  assert.equal(arc.stroke, diameter >= 225 ? 6 : 5);
+  assert.ok(arc.gap > 2.5 && arc.gap < 3.1, arc.gap);
+
   await frame.evaluate(() => {
     window.wearGestureCancels = [];
     document.addEventListener("touchmove", (event) =>
@@ -125,6 +146,7 @@ async function fullRound(diameter, scale) {
   await page.waitForTimeout(100);
   const initialScroll = await statusScroll.evaluate((el) => el.scrollTop);
   assert.ok(initialScroll > 0);
+  assert.ok((await thumb.evaluate((path) => path.getPointAtLength(0).y)) > arc.thumbY);
   const scales = await statusScroll
     .locator(".wear-list-item")
     .evaluateAll((rows) =>

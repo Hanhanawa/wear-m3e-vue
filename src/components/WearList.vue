@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { inject, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
-import { clamp, itemScale } from "../geometry";
+import { itemScale } from "../geometry";
 import { appKey, screenKey } from "../context";
 import { useWearRotary } from "../input";
 import type { WearScrollInfo } from "../types";
+import WearScrollIndicator from "./WearScrollIndicator.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -22,8 +23,7 @@ const app = inject(appKey, null);
 
 const viewport = ref<HTMLElement>();
 const track = ref<HTMLElement>();
-const thumb = ref(0);
-const offset = ref(0);
+const scroll = ref<WearScrollInfo>();
 let media: MediaQueryList | undefined;
 let resize: ResizeObserver | undefined;
 let mutation: MutationObserver | undefined;
@@ -42,13 +42,10 @@ function transformItems() {
     viewport: el.clientHeight,
     content: scrollHeight,
   };
+  scroll.value = info;
   if (screen) screen.scroll.value = info;
   if (app && !el.closest("[inert]")) app.scrollOffset.value = el.scrollTop;
   emit("scrollInfo", info);
-  thumb.value =
-    maxScroll > 1 ? clamp((el.clientHeight / scrollHeight) * 100, 14, 100) : 0;
-  offset.value =
-    maxScroll > 1 ? (el.scrollTop / maxScroll) * (100 - thumb.value) : 0;
 
   const shouldTransform =
     props.transform &&
@@ -171,20 +168,11 @@ defineExpose({
     >
       <div ref="track" class="wear-list-track"><slot /></div>
     </div>
-    <svg
-      v-if="indicator && thumb"
-      viewBox="0 0 240 240"
-      class="wear-scroll-indicator"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M223 81 A110 110 0 0 1 223 159" pathLength="100" />
-      <path
-        d="M223 81 A110 110 0 0 1 223 159"
-        pathLength="100"
-        :stroke-dasharray="`${thumb} 100`"
-        :stroke-dashoffset="-offset"
-      />
-    </svg>
+    <WearScrollIndicator
+      v-if="indicator && scroll"
+      :position="scroll.position"
+      :viewport="scroll.viewport"
+      :content="scroll.content"
+    />
   </div>
 </template>

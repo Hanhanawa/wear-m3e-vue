@@ -107,8 +107,7 @@
 }
 
 .wear-page-indicator-track,
-.wear-page-indicator-current-path,
-.wear-scroll-indicator path {
+.wear-page-indicator-current-path {
   fill: none;
   stroke-linecap: round;
 }
@@ -202,14 +201,32 @@
   --wear-item-alpha: 1 !important;
 }
 
-.wear-scroll-indicator path:first-child {
-  stroke: var(--wear-color-indicator-track);
-  stroke-width: 4.5;
+.wear-scroll-indicator {
+  margin-block: auto;
 }
 
-.wear-scroll-indicator path:last-child {
-  stroke: var(--wear-color-on-surface-variant);
-  stroke-width: 4.5;
+.wear-scroll-indicator-track {
+  color: var(--wear-color-scroll-indicator-track, #323034);
+}
+
+.wear-scroll-indicator-thumb {
+  color: var(--wear-color-scroll-indicator-thumb, #cbc7ce);
+}
+
+@supports (color: lch(from white 80 c h)) {
+  .wear-scroll-indicator-track {
+    color: var(
+      --wear-color-scroll-indicator-track,
+      lch(from var(--wear-color-on-background, #f2edf5) 20 c h)
+    );
+  }
+
+  .wear-scroll-indicator-thumb {
+    color: var(
+      --wear-color-scroll-indicator-thumb,
+      lch(from var(--wear-color-on-background, #f2edf5) 80 c h)
+    );
+  }
 }
 
 .wear-scroll-indicator:dir(rtl) {
