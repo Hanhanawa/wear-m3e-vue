@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { inject, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { clamp, itemScale } from "../geometry";
+import { appKey, screenKey } from "../context";
+import { useWearRotary } from "../input";
+import type { WearScrollInfo } from "../types";
 
 const props = withDefaults(
   defineProps<{
@@ -8,9 +11,14 @@ const props = withDefaults(
     edgeScale?: number;
     transform?: boolean;
     indicator?: boolean;
+    snap?: boolean;
   }>(),
   { edgeScale: 0.73, transform: true, indicator: true },
 );
+
+const emit = defineEmits<{ scrollInfo: [value: WearScrollInfo] }>();
+const screen = inject(screenKey, null);
+const app = inject(appKey, null);
 
 const viewport = ref<HTMLElement>();
 const track = ref<HTMLElement>();
@@ -28,6 +36,15 @@ function transformItems() {
   const frame = el.getBoundingClientRect();
   const scrollHeight = el.scrollHeight;
   const maxScroll = scrollHeight - el.clientHeight;
+  const info = {
+    position: el.scrollTop,
+    maximum: Math.max(0, maxScroll),
+    viewport: el.clientHeight,
+    content: scrollHeight,
+  };
+  if (screen) screen.scroll.value = info;
+  if (app && !el.closest("[inert]")) app.scrollOffset.value = el.scrollTop;
+  emit("scrollInfo", info);
   thumb.value =
     maxScroll > 1 ? clamp((el.clientHeight / scrollHeight) * 100, 14, 100) : 0;
   offset.value =
@@ -91,6 +108,7 @@ watch(
 );
 
 onMounted(() => {
+  screen?.register(viewport.value);
   media = matchMedia("(prefers-reduced-motion: reduce)");
   media.addEventListener("change", schedule);
   resize = new ResizeObserver(schedule);
@@ -105,20 +123,43 @@ onMounted(() => {
         attributes: true,
         attributeFilter: ["data-round"],
       });
+    let ancestor = viewport.value?.parentElement;
+    while (ancestor && ancestor !== frame) {
+      mutation.observe(ancestor, {
+        attributes: true,
+        attributeFilter: ["inert", "data-active"],
+      });
+      ancestor = ancestor.parentElement;
+    }
   }
   schedule();
 });
 
 onUnmounted(() => {
+  screen?.register(undefined);
   cancelAnimationFrame(tick);
   resize?.disconnect();
   mutation?.disconnect();
   media?.removeEventListener("change", schedule);
 });
+
+useWearRotary(viewport, (delta) => {
+  if (viewport.value) viewport.value.scrollTop += delta;
+});
+defineExpose({
+  viewport,
+  scrollTo: (top: number) => {
+    if (viewport.value) viewport.value.scrollTop = top;
+  },
+  scrollToItem: (index: number) => {
+    const row = track.value?.children[index] as HTMLElement | undefined;
+    if (row) row.scrollIntoView({ block: "center" });
+  },
+});
 </script>
 
 <template>
-  <div class="wear-list">
+  <div class="wear-list" :data-snap="snap">
     <div
       ref="viewport"
       class="wear-list-viewport"

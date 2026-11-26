@@ -5,6 +5,11 @@
   --wear-color-on-background: #f2edf5;
   --wear-color-primary: #eaddff;
   --wear-color-on-primary: #261347;
+  --wear-color-primary-container: #47375e;
+  --wear-color-on-primary-container: #f2e8ff;
+  --wear-color-secondary: #c6c1d7;
+  --wear-color-tertiary: #edb7c3;
+  --wear-color-outline: #93889b;
   --wear-color-surface: #302a39;
   --wear-color-on-surface: #f2edf5;
   --wear-color-on-surface-variant: #cec4d5;
@@ -21,6 +26,8 @@
   --wear-type-title: calc(20 * var(--wear-unit) * var(--wear-font-scale));
   --wear-type-label: calc(16 * var(--wear-unit) * var(--wear-font-scale));
   --wear-type-detail: calc(14 * var(--wear-unit) * var(--wear-font-scale));
+  --wear-type-display: calc(32 * var(--wear-unit) * var(--wear-font-scale));
+  --wear-type-body: calc(16 * var(--wear-unit) * var(--wear-font-scale));
   --wear-radius-large: calc(26 * var(--wear-unit));
   --wear-top-clearance: 16%;
   --wear-bottom-clearance: 18%;
@@ -33,7 +40,7 @@
   block-size: 100%;
   color: var(--wear-color-on-background);
   background: var(--wear-color-background);
-  font-family: "Roboto", system-ui, sans-serif;
+  font-family: var(--wear-font-family, "Roboto", system-ui, sans-serif);
 }
 
 .wear-frame {

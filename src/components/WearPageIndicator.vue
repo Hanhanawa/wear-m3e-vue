@@ -9,8 +9,9 @@ const props = withDefaults(
     index?: number;
     progress?: number;
     dir?: WearDirection;
+    orientation?: "horizontal" | "vertical";
   }>(),
-  { index: 0, dir: "ltr" },
+  { index: 0, dir: "ltr", orientation: "horizontal" },
 );
 
 const visible = computed(() => clamp(Math.floor(props.count) || 0, 0, 6));
@@ -65,6 +66,7 @@ const selected = computed(() => {
   <svg
     v-if="visible > 1"
     class="wear-page-indicator"
+    :data-orientation="orientation"
     viewBox="0 0 240 240"
     aria-hidden="true"
     focusable="false"

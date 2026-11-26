@@ -29,9 +29,12 @@
     "build": "vite build && vue-tsc -p tsconfig.build.json",
     "check": "vue-tsc --noEmit",
     "test": "node --test tests/*.test.ts",
+    "demo": "vite examples/watch --host 127.0.0.1 --config examples/watch/vite.config.ts --mode demo --port 5173 --strictPort",
+    "catalog": "vite examples/watch --host 127.0.0.1 --config examples/watch/vite.config.ts --mode catalog --port 5174 --strictPort",
     "example": "vite examples/watch --host 127.0.0.1 --config examples/watch/vite.config.ts",
     "verify:package": "node scripts/verify-package.mjs",
-    "test:browser": "node tests/browser.mjs"
+    "test:browser": "node tests/browser.mjs",
+    "test:catalog": "node tests/catalog-browser.mjs"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

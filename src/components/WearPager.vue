@@ -13,8 +13,14 @@ const props = withDefaults(
     labels?: Partial<WearPagerLabels>;
     edgeGuard?: number;
     indicator?: boolean;
+    orientation?: "horizontal" | "vertical";
   }>(),
-  { label: "Watch pages", edgeGuard: 18, indicator: true },
+  {
+    label: "Watch pages",
+    edgeGuard: 18,
+    indicator: true,
+    orientation: "horizontal",
+  },
 );
 
 const emit = defineEmits<{
@@ -30,7 +36,10 @@ const width = ref(1);
 const current = computed(() =>
   normalizedPage(props.modelValue ?? internal.value, props.pages.length),
 );
-const sign = computed(() => (direction.value === "rtl" ? -1 : 1));
+const vertical = computed(() => props.orientation === "vertical");
+const sign = computed(() =>
+  !vertical.value && direction.value === "rtl" ? -1 : 1,
+);
 const progress = computed(
   () => current.value - (shift.value / width.value) * sign.value,
 );
@@ -142,7 +151,7 @@ function begin(event: TouchEvent) {
   )
     return;
 
-  width.value = rect.width;
+  width.value = vertical.value ? rect.height : rect.width;
   finger = {
     id: point.identifier,
     x: point.clientX,
@@ -162,14 +171,31 @@ function move(event: TouchEvent) {
 
   const point = event.touches[0];
   if (point.identifier !== finger.id) return;
-  const dx = point.clientX - finger.x;
-  const dy = point.clientY - finger.y;
+  const dx = vertical.value
+    ? point.clientY - finger.y
+    : point.clientX - finger.x;
+  const dy = vertical.value
+    ? point.clientX - finger.x
+    : point.clientY - finger.y;
   const axis = finger.axis ?? gestureAxis(dx, dy, 8 * finger.unit);
   if (axis === "y" || (axis === "x" && !event.cancelable)) {
     reset();
     return;
   }
   if (axis !== "x") return;
+
+  if (vertical.value && finger.axis === null) {
+    const scroll = (event.target as Element)?.closest(".wear-list-viewport");
+    if (
+      scroll &&
+      (dx < 0
+        ? scroll.scrollTop < scroll.scrollHeight - scroll.clientHeight - 1
+        : scroll.scrollTop > 1)
+    ) {
+      reset();
+      return;
+    }
+  }
 
   const forward = dx * sign.value < 0;
   if (
@@ -194,7 +220,9 @@ function end(event: TouchEvent) {
   const step =
     point && finger.axis === "x"
       ? swipePage(
-          (point.clientX - finger.x) * sign.value,
+          (vertical.value
+            ? point.clientY - finger.y
+            : point.clientX - finger.x) * sign.value,
           event.timeStamp - finger.started,
           width.value,
           finger.unit,
@@ -224,9 +252,9 @@ function key(event: KeyboardEvent) {
 
   readDirection();
   const step =
-    event.key === "ArrowLeft"
+    event.key === (vertical.value ? "ArrowUp" : "ArrowLeft")
       ? -sign.value
-      : event.key === "ArrowRight"
+      : event.key === (vertical.value ? "ArrowDown" : "ArrowRight")
         ? sign.value
         : 0;
   if (!step) return;
@@ -241,6 +269,7 @@ function key(event: KeyboardEvent) {
   <div
     ref="root"
     class="wear-pager"
+    :data-orientation="orientation"
     :dir="dir"
     role="region"
     :aria-label="label"
@@ -298,6 +327,7 @@ function key(event: KeyboardEvent) {
       :index="current"
       :progress="progress"
       :dir="direction"
+      :orientation="orientation"
     />
   </div>
 </template>

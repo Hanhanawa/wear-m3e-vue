@@ -15,3 +15,37 @@ The Vue and CSS implementation is original and licensed under Apache-2.0. The Ko
 The build targets Chromium/WebView 120 as an engineering floor for ESM, container units, `:has()`, `:dir()` and inert panels and the other APIs used. The build target is verified in Chrome for Testing 120.0.6099.109. Browser regression also runs on recent Chromium. Separately, the production consumer ran in the isolated API 37 Wear WebView 145.0.7632.218. There is no dependency on CSS scroll timelines, the Permissions API, remote fonts, or external services.
 
 BakaSU uses a native zoom factor of 0.6, 0.8 or 1 and sizes the WebView around that transform. The browser suite models the resulting logical viewport and external zoom. The separate Android harness displays the compiled Vue consumer in a clipped WebView. Browser automation covers native vertical wheel scrolling and the accessibility tree. The AVD virtual rotary event left the list and page indicator unchanged in this preview shell. Actual BakaSU shell gestures, zoom controls, hardware rotary input, TalkBack, and WebView 120 on Android need host or device checks.
+
+## Expanded Wear component implementation
+
+The component catalog was implemented against the Google Maven source artifacts
+for `androidx.wear.compose:compose-material3:1.7.2`, `compose-foundation:1.7.2`,
+and `compose-navigation3:1.7.2`, with the sibling Material 2.5 and material-core
+sources used to cross-check selection controls and migration mappings. Components
+use original Vue, HTML, CSS and SVG implementations.
+
+The baseline includes all Material 3 visual component families, their named button,
+selection, card, progress and dialog variants, and the associated paging and
+scroll scaffolds. Reusable content functions map to exported dialog-content
+components. Kotlin state/default objects map to Vue models, props, scoped slots,
+composables and semantic CSS properties. DurationPicker and PullToRefresh use the
+additional 1.8.0-alpha04 source as a reference.
+
+| Source family                                                                                                                                         | Web implementation and scope                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button.kt`, `IconButton.kt`, `TextButton.kt`, `ButtonGroup.kt`, `EdgeButton.kt`                                                                      | Row, compact, circular and edge variants with shared targets, roles, disabled states and press shape transitions. Edge actions have a compact visual state during scrolling and expand at the end.                   |
+| `SwitchButton.kt`, `CheckboxButton.kt`, `RadioButton.kt`                                                                                              | Full-width and split rows, input semantics, three-line primary labels, two-line secondary labels, state colors and independent split events. Switch artwork uses a 32 by 22 dp track inside a 48 dp input target.    |
+| `Slider.kt`, `Stepper.kt`, `Picker.kt`, `PickerGroup.kt`, `DatePicker.kt`, `TimePicker.kt`                                                            | Wear plus/minus controls, segmented progress, keyboard and host rotary handling, snapping wheel lists, date rollover and 12/24-hour values. `WearPickerScreen` composes the wheels with title and edge confirmation. |
+| `Dialog.kt`, `AlertDialog.kt`, `ConfirmationDialog.kt`, `OpenOnPhoneDialog.kt`                                                                        | Native browser modal lifecycle, round frame clipping, focus restoration, content/action slots and success/failure/phone artwork. Actual phone handoff belongs to the application.                                    |
+| `CircularProgressIndicator.kt`, `LinearProgressIndicator.kt`, `ArcProgressIndicator.kt`, `SegmentedCircularProgressIndicator.kt`, `LevelIndicator.kt` | Determinate and indeterminate SVG/CSS progress, masks for segments, and positioned arc levels.                                                                                                                       |
+| `TransformingLazyColumn.kt`, `ResponsiveTransformationSpec.kt`                                                                                        | Existing DOM edge transformation plus a measured virtual list with stable keys and overscan. The web layout approximates the native surface geometry and spring behavior.                                            |
+| `PagerScaffold.kt`, `PageIndicator.kt`, foundation `Pager.kt`                                                                                         | Horizontal and vertical touch paging, state-preserving panels, inert inactive pages, keyboard navigation and arc indicators. Wheel input continues to belong to scrolling controls.                                  |
+| `SwipeToReveal.kt`, `SwipeToDismissBox.kt`, `SwipeDismissableSceneStrategy.kt`                                                                        | Touch reveal/dismiss, accessible action alternatives, undo state and a Vue navigation stack. Application navigation can synchronize its route stack with `v-model`.                                                  |
+| `CurvedLayout.kt`, `CurvedText.kt`, `TimeText.kt`                                                                                                     | Arc text paths and angular/radial positioning for ordinary children. Native font warping and dynamic font registry behavior are approximated with SVG text and CSS transitions.                                      |
+| `LocalAmbientModeManager.kt`, `OneHandedGesture*Indicator.kt`, `rotaryScrollable`                                                                     | Host-driven ambient state, minute ticks, gesture indicators and custom-event input integration. Native lifecycle and hardware discovery require an embedding host.                                                   |
+
+Google Material Web 2.5.0 and other general MD3 libraries were reviewed in a
+separate temporary harness. This package keeps Vue as its only runtime peer and
+implements Wear-specific geometry and interactions directly. The component family
+coverage describes browser behavior, with actual-device motion fidelity, haptics,
+system accessibility and power behavior requiring Wear OS testing.

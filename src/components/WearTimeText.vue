@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, useId } from "vue";
+import { computed, inject, onMounted, onUnmounted, ref, useId } from "vue";
+import { appKey } from "../context";
 
 const props = withDefaults(
   defineProps<{
@@ -7,8 +8,16 @@ const props = withDefaults(
     locale?: string;
     hourCycle?: Intl.DateTimeFormatOptions["hourCycle"];
     arc?: boolean;
+    scrollAway?: boolean;
   }>(),
   { arc: true },
+);
+const app = inject(appKey, null);
+const away = computed(
+  () =>
+    props.scrollAway &&
+    !app?.ambient.value &&
+    (app?.scrollOffset.value ?? 0) > 24,
 );
 
 const now = ref(new Date());
@@ -35,7 +44,7 @@ onUnmounted(() => window.clearTimeout(timer));
 </script>
 
 <template>
-  <div class="wear-time">
+  <div class="wear-time" :data-away="away" :aria-hidden="away || undefined">
     <time
       :datetime="value.toISOString()"
       :class="{ 'wear-visually-hidden': arc }"

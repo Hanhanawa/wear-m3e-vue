@@ -33,6 +33,7 @@ for (const name of [
   "index.html",
   "main.ts",
   "WatchDemo.vue",
+  "WearGallery.vue",
   "vite.config.ts",
 ]) {
   copyFileSync(join(root, "examples/watch", name), join(run, name));
