@@ -4,7 +4,7 @@
 
 适用于圆形手表 WebView 的 Vue 3 和 TypeScript 组件库，参考 Wear Material 3 Expressive 与 AndroidX Wear Compose。包含滑动分页、弧形时间与指示器、随滚动变形的列表、触控控件、对话框和选择器。
 
-**此包尚未发布到 npm。** 可使用 CI 验证过的归档，或在本地检出后自行构建。
+`@hanhanawa/wear-m3e-vue` 首次发布到 npm 前，可使用 CI 验证过的归档，或在本地自行构建。
 
 ## 快速开始
 
@@ -21,12 +21,12 @@ corepack pnpm demo
 要在另一个 Vue 3 项目中使用，可安装下载或本地构建的归档，再导入样式。
 
 ```sh
-corepack pnpm add ./wear-m3e-vue-0.1.0.tgz
+corepack pnpm add ./hanhanawa-wear-m3e-vue-0.1.0.tgz
 ```
 
 ```ts
-import { WearScaffold, WearTimeText, WearPager } from "wear-m3e-vue";
-import "wear-m3e-vue/style.css";
+import { WearScaffold, WearTimeText, WearPager } from "@hanhanawa/wear-m3e-vue";
+import "@hanhanawa/wear-m3e-vue/style.css";
 ```
 
 ## 指南

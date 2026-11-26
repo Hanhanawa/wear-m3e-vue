@@ -15,8 +15,8 @@ import {
   WearListItem,
   WearTitle,
   WearStatusCard,
-} from "wear-m3e-vue";
-import "wear-m3e-vue/style.css";
+} from "@hanhanawa/wear-m3e-vue";
+import "@hanhanawa/wear-m3e-vue/style.css";
 
 const page = ref(0);
 const pages = [

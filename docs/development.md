@@ -36,4 +36,20 @@ Both suites accept `WEAR_CHROMIUM` to reuse a compatible executable and `WEAR_AR
 
 The CI workflow runs for pull requests targeting `main` and pushes to `main`. Configure the **Verify package** job from the **CI** workflow as the required check on `main` after the first run. It covers the frozen root install, type-check, unit tests, packed consumer build and both browser suites.
 
-After a successful run, download the `wear-m3e-vue-package` artifact from that run's summary. It contains the same `.tgz` the consumer installed and a `SHA256SUMS` file. From the extracted artifact directory, run `sha256sum -c SHA256SUMS` before installing it. CI artifacts are retained for 14 days. The package has not been published to npm.
+After a successful run, download the `wear-m3e-vue-package` artifact from that run's summary. It contains the same `.tgz` the consumer installed and a `SHA256SUMS` file. From the extracted artifact directory, run `sha256sum -c SHA256SUMS` before installing it. CI artifacts are retained for 14 days.
+
+## Stage an npm release
+
+Use npm CLI 11.15.0 or later. After **Verify package** passes for the release commit on `main`, download and extract its `wear-m3e-vue-package` artifact. Use the npm account with publish access to the `@hanhanawa` scope and enable two-factor authentication for approval.
+
+For the first release, the exact archive from a successful release PR check may also be staged before merge for review. After the PR is merged and its `main` build passes, compare the SHA-256 of the archive from `npm stage download <stage-id>` with the `.tgz` in the verified `main` artifact. Approve only if the two hashes match.
+
+From the extracted artifact directory, verify the checksum and stage the tested archive.
+
+```sh
+sha256sum -c SHA256SUMS &&
+npm whoami --registry https://registry.npmjs.org/ &&
+npm stage publish ./hanhanawa-wear-m3e-vue-0.1.0.tgz --access public --registry https://registry.npmjs.org/
+```
+
+Review the stage ID and package contents in npm's **Staged Packages** interface or with `npm stage view <stage-id>`. The `0.1.0` release becomes public after a maintainer approves it with two-factor authentication. On the first stage, npm may create a public `0.0.0-stage` placeholder. [npm staged publishing](https://docs.npmjs.com/staged-publishing/)

@@ -35,7 +35,7 @@ import {
   WearCheckboxButton,
   WearRadioGroup,
   WearRadioButton,
-} from "wear-m3e-vue";
+} from "@hanhanawa/wear-m3e-vue";
 
 const enabled = ref(true);
 const backup = ref(false);

@@ -4,7 +4,7 @@
 
 Vue 3 and TypeScript components for round watch WebViews, inspired by Wear Material 3 Expressive and AndroidX Wear Compose. Includes swipe paging, curved time and indicators, transforming lists, touch controls, dialogs, and pickers.
 
-**This package has not been published to npm.** Use a verified CI archive or build one from a local checkout.
+Use a verified CI archive or build one locally while the first npm release of `@hanhanawa/wear-m3e-vue` is pending.
 
 ## Quick start
 
@@ -21,12 +21,12 @@ Open the [four-page demo](http://127.0.0.1:5173/). Run `corepack pnpm catalog` i
 To use the library in another Vue 3 project, install the downloaded or locally built archive and import the stylesheet.
 
 ```sh
-corepack pnpm add ./wear-m3e-vue-0.1.0.tgz
+corepack pnpm add ./hanhanawa-wear-m3e-vue-0.1.0.tgz
 ```
 
 ```ts
-import { WearScaffold, WearTimeText, WearPager } from "wear-m3e-vue";
-import "wear-m3e-vue/style.css";
+import { WearScaffold, WearTimeText, WearPager } from "@hanhanawa/wear-m3e-vue";
+import "@hanhanawa/wear-m3e-vue/style.css";
 ```
 
 ## Guides

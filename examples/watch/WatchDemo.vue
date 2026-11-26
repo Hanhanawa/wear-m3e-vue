@@ -10,7 +10,7 @@ import {
   WearTimeText,
   WearTitle,
   type WearPage,
-} from "wear-m3e-vue";
+} from "@hanhanawa/wear-m3e-vue";
 
 const query = new URLSearchParams(window.location.search);
 const rtl = query.get("dir") === "rtl";

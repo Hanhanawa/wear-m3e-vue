@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import Demo from "./WatchDemo.vue";
 import Gallery from "./WearGallery.vue";
-import "wear-m3e-vue/style.css";
+import "@hanhanawa/wear-m3e-vue/style.css";
 
 const mode = import.meta.env.MODE;
 const catalog =
