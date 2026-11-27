@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { useWearRange } from "../range";
 import { useWearRotary } from "../input";
+import { wearProgress } from "../tokens";
 import WearRangeIcon from "./WearRangeIcon.vue";
 
 const props = withDefaults(
@@ -24,14 +25,33 @@ const { min, max, step, value, ratio, change, adjust, buttonEvents } =
   useWearRange(props, model);
 const decreaseEvents = buttonEvents(-1);
 const increaseEvents = buttonEvents(1);
+/**
+ * Separator dots, capped by `SliderDefaults.MaxSegmentSteps`: the native
+ * segmented slider keeps its density inside that range instead of drawing one
+ * dot per step of a fine-grained control (Slider.kt:131, :309, :334).
+ */
 const segments = computed(() =>
   props.segmented
     ? Math.min(
-        20,
+        wearProgress.sliderMaxSegmentSteps,
         Math.max(1, Math.round((max.value - min.value) / step.value)),
       )
     : 1,
 );
+/** `visibleSegments = steps + 1`, and a separator sits between neighbours. */
+const separators = computed(() => {
+  if (!props.segmented) return [];
+  const visible = segments.value + 1;
+  return Array.from({ length: segments.value }, (_, index) => {
+    const position = (index + 1) / visible;
+    return {
+      index: index + 1,
+      visible,
+      // A dot on the completed side takes the indicator separator role.
+      onActive: position <= ratio.value + 1e-6,
+    };
+  });
+});
 useWearRotary(root, adjust);
 
 function input(event: Event) {
@@ -64,7 +84,19 @@ function input(event: Event) {
       :data-segmented="segmented"
       @click.stop
     >
+      <span class="wear-slider-bar" aria-hidden="true" />
       <span class="wear-slider-fill" aria-hidden="true" />
+      <span
+        v-for="dot in separators"
+        :key="dot.index"
+        class="wear-slider-separator"
+        :data-on="dot.onActive ? 'active' : 'track'"
+        :style="{
+          '--wear-separator-index': dot.index,
+          '--wear-separator-count': dot.visible,
+        }"
+        aria-hidden="true"
+      />
       <input
         type="range"
         :min="min"

@@ -68,8 +68,10 @@ export function itemScale({
   return Math.min(scale, clamp(fittedScale, 0.5, 1));
 }
 
-export function arcPoint(index: number, count: number): [number, number] {
-  const radius = 110;
-  const angle = (index - (count - 1) / 2) * (10 / radius);
-  return [120 + radius * Math.sin(angle), 120 + radius * Math.cos(angle)];
-}
+/**
+ * Dot placement used to live here as `arcPoint(index, count)` on a hard-coded
+ * 110 unit radius inside a 240 unit viewBox, which is exactly what made a "6
+ * unit" dot become 4.96 dp on a 192 screen and 6.2 dp on a 240 one. It is
+ * replaced by `pageIndicatorGeometry` in `src/arcs.ts`, which works in logical
+ * dp and derives its radius from the measured screen diameter.
+ */

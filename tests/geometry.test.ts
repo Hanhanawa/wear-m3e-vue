@@ -1,7 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import {
-  arcPoint,
   gestureAxis,
   itemScale,
   normalizedPage,
@@ -48,10 +47,7 @@ test("centered medium rows remain full size, edge rows scale symmetrically", () 
   }
 });
 
-test("indicator coordinates follow the lower arc, centered and ordered", () => {
-  const points = [0, 1, 2, 3].map((i) => arcPoint(i, 4));
-  assert.equal(points[0][1], points[3][1]);
-  assert.equal(points[1][1], points[2][1]);
-  assert.ok(points[1][1] > points[0][1]);
-  assert.ok(points[0][0] < points[1][0]);
-});
+// Dot placement moved out of geometry.ts into src/arcs.ts, where it is
+// computed in logical dp from the measured screen diameter. The old
+// `arcPoint(index, count)` test pinned coordinates in a fixed 240 unit space;
+// `tests/arcs.test.ts` now pins the dp contract instead.

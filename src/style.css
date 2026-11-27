@@ -1,38 +1,248 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+/*
+ * Wear Material 3 tokens, expressed as CSS custom properties.
+ *
+ * Colour roles: `tokens/ColorTokens.kt` + `tokens/PaletteTokens.kt`
+ * Type roles:   `tokens/TypeScaleTokens.kt` + `tokens/TypographyTokens.kt`
+ * Shapes:       `tokens/ShapeTokens.kt:28-34`
+ * Motion:       `tokens/MotionTokens.kt` + `MotionScheme.kt`
+ * Disabled:     `ColorScheme.kt:413-414` (container 0.12, content 0.38)
+ * Padding:      `Padding.kt:34-73`
+ *
+ * Every length is written as `calc(<dp> * var(--wear-unit))`, so one unit is
+ * one logical Wear dp at any host zoom. Type roles additionally carry the
+ * per-role font-scale policy: text follows the host, the large display and
+ * numeral ramps are compressed, and arc text is fixed, because a 60 sp numeral
+ * that grows without bound no longer fits a round screen.
+ */
+
 .wear-app {
+  /* ---------------------------------------------------------------- colors */
+  /* Neutral / surface family. `surface` is a migration alias only: components
+     consume the container roles, never the alias. */
   --wear-color-background: #000;
-  --wear-color-on-background: #f2edf5;
-  --wear-color-primary: #eaddff;
-  --wear-color-on-primary: #261347;
-  --wear-color-primary-container: #47375e;
-  --wear-color-on-primary-container: #f2e8ff;
-  --wear-color-secondary: #c6c1d7;
-  --wear-color-tertiary: #edb7c3;
-  --wear-color-outline: #93889b;
-  --wear-color-surface: #302a39;
-  --wear-color-on-surface: #f2edf5;
-  --wear-color-on-surface-variant: #cec4d5;
+  --wear-color-on-background: #fff;
+  --wear-color-surface-container-low: #272430;
+  --wear-color-surface-container: #332e3c;
+  --wear-color-surface-container-high: #494453;
+  --wear-color-on-surface: #f6edff;
+  --wear-color-on-surface-variant: #cac4d0;
+  --wear-color-outline: #948f9a;
+  --wear-color-outline-variant: #615d67;
+
+  --wear-color-primary: #e9ddff;
+  --wear-color-primary-dim: #d0bcff;
+  --wear-color-primary-container: #4d3d76;
+  --wear-color-on-primary: #210f48;
+  --wear-color-on-primary-container: #f6edff;
+
+  --wear-color-secondary: #dee0ff;
+  --wear-color-secondary-dim: #bac3ff;
+  --wear-color-secondary-container: #3a4376;
+  --wear-color-on-secondary: #0c1649;
+  --wear-color-on-secondary-container: #f0efff;
+
+  --wear-color-tertiary: #ffdcc2;
+  --wear-color-tertiary-dim: #ffb77a;
+  --wear-color-tertiary-container: #6c3a03;
+  --wear-color-on-tertiary: #2e1500;
+  --wear-color-on-tertiary-container: #ffece2;
+
+  --wear-color-error: #f2b8b5;
+  --wear-color-error-dim: #ec928e;
+  --wear-color-error-container: #8c1d18;
+  --wear-color-on-error: #410e0b;
+  --wear-color-on-error-container: #fceeee;
+
+  /* Project extensions: no Wear ColorScheme counterpart. */
+  --wear-color-surface: var(--wear-color-surface-container);
+  --wear-color-warning: #ffb961;
   --wear-color-warning-container: #693b04;
   --wear-color-on-warning-container: #ffdfa8;
-  --wear-color-error-container: #8c1d18;
-  --wear-color-on-error-container: #f9dedc;
   --wear-color-indicator-track: #1e1c21;
   --wear-color-indicator-inactive: #77727c;
   --wear-color-indicator-active: #fff;
+
+  /* Page and scroll indicators derive from onBackground brightness, matching
+     the native roles instead of hard-coding white. */
+  --wear-page-selected: var(--wear-color-on-background);
+  --wear-page-unselected: color-mix(
+    in srgb,
+    var(--wear-color-on-background) 30%,
+    transparent
+  );
+  --wear-page-track: color-mix(
+    in srgb,
+    var(--wear-color-background) 85%,
+    transparent
+  );
+  --wear-time-color: color-mix(
+    in oklch,
+    var(--wear-color-on-background) 80%,
+    var(--wear-color-background)
+  );
+
+  /* ------------------------------------------------------------ disabled */
+  /* Resolved paints, never a group opacity: a disabled container is onSurface
+     at 12% and disabled content is onSurface at 38%, so the accent does not
+     survive as a bright colour behind a fade. */
+  --wear-alpha-disabled-container: 0.12;
+  --wear-alpha-disabled-content: 0.38;
+  --wear-paint-disabled-container: color-mix(
+    in srgb,
+    var(--wear-color-on-surface) 12%,
+    transparent
+  );
+  --wear-paint-disabled-container-strong: color-mix(
+    in srgb,
+    var(--wear-color-on-surface) 16%,
+    transparent
+  );
+  --wear-paint-disabled-content: color-mix(
+    in srgb,
+    var(--wear-color-on-surface) 38%,
+    transparent
+  );
+  --wear-paint-disabled-outline: color-mix(
+    in srgb,
+    var(--wear-color-on-surface) 20%,
+    transparent
+  );
+
+  /* ------------------------------------------------------------ geometry */
   --wear-unit: 1px;
   --wear-font-scale: 1;
+  --wear-screen-diameter: 192;
+  /* 0 at the 192 dp small-screen anchor, 1 at 240 dp. */
+  --wear-screen-ratio: 0;
   --wear-touch-target: calc(48 * var(--wear-unit));
-  --wear-type-title: calc(20 * var(--wear-unit) * var(--wear-font-scale));
-  --wear-type-label: calc(16 * var(--wear-unit) * var(--wear-font-scale));
-  --wear-type-detail: calc(14 * var(--wear-unit) * var(--wear-font-scale));
-  --wear-type-display: calc(32 * var(--wear-unit) * var(--wear-font-scale));
-  --wear-type-body: calc(16 * var(--wear-unit) * var(--wear-font-scale));
+  --wear-radius-extra-small: calc(4 * var(--wear-unit));
+  --wear-radius-small: calc(8 * var(--wear-unit));
+  --wear-radius-medium: calc(18 * var(--wear-unit));
   --wear-radius-large: calc(26 * var(--wear-unit));
-  --wear-top-clearance: 16%;
-  --wear-bottom-clearance: 18%;
-  --wear-side-clearance: 7.3%;
+  --wear-radius-extra-large: calc(36 * var(--wear-unit));
+  --wear-radius-full: 50%;
+  --wear-radius-none: 0;
+  /* Padding.kt: 13% top / 23% bottom list content, 5.2% sides, 2 dp edge. */
+  --wear-top-clearance: 13%;
+  --wear-bottom-clearance: 23%;
+  --wear-side-clearance: 5.2%;
+  --wear-edge-padding: calc(2 * var(--wear-unit));
   --wear-gap: calc(4 * var(--wear-unit));
+
+  /* ------------------------------------------------------------ typography */
+  --wear-type-scale-full: var(--wear-font-scale);
+  --wear-type-scale-limited: clamp(1, var(--wear-font-scale), 1.35);
+
+  --wear-type-display-large-size: calc(40 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-display-large-line-height: calc(44 / 40);
+  --wear-type-display-large-weight: 500;
+  --wear-type-display-large-tracking: calc(0.2 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-display-medium-size: calc(30 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-display-medium-line-height: calc(34 / 30);
+  --wear-type-display-medium-weight: 520;
+  --wear-type-display-medium-tracking: calc(0.2 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-display-small-size: calc(24 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-display-small-line-height: calc(26 / 24);
+  --wear-type-display-small-weight: 550;
+  --wear-type-display-small-tracking: calc(0.2 * var(--wear-unit) * var(--wear-type-scale-limited));
+
+  --wear-type-title-large-size: calc(18 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-title-large-line-height: calc(20 / 18);
+  --wear-type-title-large-weight: 500;
+  --wear-type-title-large-tracking: calc(0.2 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-title-medium-size: calc(16 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-title-medium-line-height: calc(18 / 16);
+  --wear-type-title-medium-weight: 550;
+  --wear-type-title-medium-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-title-small-size: calc(14 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-title-small-line-height: calc(16 / 14);
+  --wear-type-title-small-weight: 550;
+  --wear-type-title-small-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+
+  --wear-type-label-large-size: calc(20 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-label-large-line-height: calc(22 / 20);
+  --wear-type-label-large-weight: 500;
+  --wear-type-label-large-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-label-medium-size: calc(15 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-label-medium-line-height: calc(18 / 15);
+  --wear-type-label-medium-weight: 500;
+  --wear-type-label-medium-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-label-small-size: calc(13 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-label-small-line-height: calc(16 / 13);
+  --wear-type-label-small-weight: 500;
+  --wear-type-label-small-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+
+  --wear-type-body-large-size: calc(16 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-body-large-line-height: calc(18 / 16);
+  --wear-type-body-large-weight: 450;
+  --wear-type-body-large-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-body-medium-size: calc(14 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-body-medium-line-height: calc(16 / 14);
+  --wear-type-body-medium-weight: 450;
+  --wear-type-body-medium-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-body-small-size: calc(12 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-body-small-line-height: calc(14 / 12);
+  --wear-type-body-small-weight: 500;
+  --wear-type-body-small-tracking: calc(0.4 * var(--wear-unit) * var(--wear-type-scale-full));
+
+  --wear-type-numeral-extra-large-size: calc(60 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-numeral-extra-large-weight: 560;
+  --wear-type-numeral-large-size: calc(50 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-numeral-large-weight: 580;
+  --wear-type-numeral-medium-size: calc(40 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-numeral-medium-weight: 580;
+  --wear-type-numeral-small-size: calc(30 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-numeral-small-weight: 550;
+  --wear-type-numeral-extra-small-size: calc(24 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-numeral-extra-small-weight: 550;
+
+  /* Arc text keeps its own tracking pair; the clock is drawn at a fixed size
+     so a large accessibility font cannot push it off the bezel. */
+  --wear-type-arc-large-size: calc(18 * var(--wear-unit));
+  --wear-type-arc-large-weight: 599;
+  --wear-type-arc-large-tracking-top: calc(0.4 * var(--wear-unit));
+  --wear-type-arc-large-tracking-bottom: calc(1.6 * var(--wear-unit));
+  --wear-type-arc-medium-size: calc(15 * var(--wear-unit));
+  --wear-type-arc-medium-weight: 599;
+  --wear-type-arc-medium-tracking-top: calc(0.6 * var(--wear-unit));
+  --wear-type-arc-medium-tracking-bottom: calc(1.4 * var(--wear-unit));
+  --wear-type-arc-small-size: calc(14 * var(--wear-unit));
+  --wear-type-arc-small-weight: 560;
+  --wear-type-arc-small-tracking-top: calc(0.6 * var(--wear-unit));
+  --wear-type-arc-small-tracking-bottom: calc(1.4 * var(--wear-unit));
+
+  /* Migration aliases. These keep the sizes the library shipped before the
+     audit; new components use the explicit roles above instead. */
+  --wear-type-display: calc(32 * var(--wear-unit) * var(--wear-type-scale-limited));
+  --wear-type-title: calc(20 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-label: calc(16 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-body: calc(16 * var(--wear-unit) * var(--wear-type-scale-full));
+  --wear-type-detail: calc(14 * var(--wear-unit) * var(--wear-type-scale-full));
+
+  /* --------------------------------------------------------------- motion */
+  --wear-motion-duration-short1: 50ms;
+  --wear-motion-duration-short2: 100ms;
+  --wear-motion-duration-short3: 150ms;
+  --wear-motion-duration-short4: 200ms;
+  --wear-motion-duration-medium1: 250ms;
+  --wear-motion-duration-medium2: 300ms;
+  --wear-motion-duration-medium3: 350ms;
+  --wear-motion-duration-medium4: 400ms;
+  --wear-motion-duration-long1: 450ms;
+  --wear-motion-duration-long2: 500ms;
+  --wear-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --wear-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --wear-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --wear-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --wear-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  /* Standard springs are critically damped (ratio 1.0), expressive ones
+     overshoot (0.7-0.8); the CSS stand-in carries that difference. */
+  --wear-motion-spatial: var(--wear-easing-standard);
+  --wear-motion-spatial-expressive: var(--wear-easing-emphasized-decelerate);
+  --wear-motion-effects: var(--wear-easing-standard-decelerate);
+
   container-type: size;
   display: grid;
   place-items: center;
@@ -49,7 +259,8 @@
   inline-size: 100%;
   block-size: 100%;
   overflow: hidden;
-  font-size: var(--wear-type-label);
+  font-size: var(--wear-type-label-medium-size);
+  line-height: var(--wear-type-label-medium-line-height);
   color-scheme: dark;
 }
 
@@ -88,16 +299,17 @@
 .wear-time {
   z-index: 4;
   text-align: center;
-  padding-block-start: calc(6 * var(--wear-unit));
+  /* TimeTextDefaults.ContentPadding = edgePadding. */
+  padding-block-start: var(--wear-edge-padding);
 }
 
 .wear-time svg text {
-  fill: var(--wear-color-on-background);
+  fill: var(--wear-time-color);
   stroke: var(--wear-color-background);
-  stroke-width: 2.4;
+  /* The curved background sits at 85% of the surface alpha. */
+  stroke-opacity: 0.85;
   paint-order: stroke fill;
-  font-size: 15px;
-  font-weight: 500;
+  font-weight: var(--wear-type-arc-medium-weight);
   font-variant-numeric: tabular-nums;
 }
 
@@ -113,19 +325,17 @@
 }
 
 .wear-page-indicator-track {
-  stroke: var(--wear-color-indicator-track);
-  stroke-width: 13;
+  stroke: var(--wear-page-track);
 }
 
 .wear-page-indicator-dot {
-  fill: var(--wear-color-indicator-inactive);
+  fill: var(--wear-page-unselected);
 }
 .wear-page-indicator-current {
-  fill: var(--wear-color-indicator-active);
+  fill: var(--wear-page-selected);
 }
 .wear-page-indicator-current-path {
-  stroke: var(--wear-color-indicator-active);
-  stroke-width: 6.2;
+  stroke: var(--wear-page-selected);
 }
 
 .wear-pager {
@@ -136,7 +346,8 @@
 .wear-pane {
   transform: translate3d(var(--wear-page-shift, 0%), 0, 0)
     scale(var(--wear-page-scale, 1));
-  transition: transform 270ms cubic-bezier(0.2, 0.82, 0.25, 1);
+  transition: transform var(--wear-motion-duration-medium3)
+    var(--wear-easing-standard);
   outline: none;
 }
 
@@ -149,8 +360,8 @@
 
 .wear-pager:focus-visible,
 .wear-list-viewport:focus-visible {
-  outline: 2px solid var(--wear-color-primary);
-  outline-offset: -3px;
+  outline: calc(2 * var(--wear-unit)) solid var(--wear-color-primary);
+  outline-offset: calc(-3 * var(--wear-unit));
   border-radius: inherit;
 }
 
@@ -188,17 +399,30 @@
   min-inline-size: 0;
   --wear-item-scale: 1;
   --wear-item-alpha: 1;
+  --wear-item-content-alpha: 1;
 }
 
+/*
+ * Container and content transform separately, as `ResponsiveTransformationSpec`
+ * does: the container carries scale + translation + its own alpha, the content
+ * only alpha. The layout box keeps the *transformed* height, so a scaled row
+ * stops reserving its unscaled height.
+ */
 .wear-list-item[data-effect="content"] > .wear-list-content,
 .wear-list-item[data-effect="surface"] .wear-surface-visual {
   transform: scale(var(--wear-item-scale));
   opacity: var(--wear-item-alpha);
 }
 
+.wear-list-item[data-effect="content"] > .wear-list-content :is(.wear-label, .wear-detail, .wear-icon),
+.wear-list-item[data-effect="surface"] .wear-surface-visual > :is(.wear-icon, .wear-copy) {
+  opacity: var(--wear-item-content-alpha);
+}
+
 .wear-list-item:has(:focus-visible) {
   --wear-item-scale: 1 !important;
   --wear-item-alpha: 1 !important;
+  --wear-item-content-alpha: 1 !important;
 }
 
 .wear-scroll-indicator {
@@ -266,7 +490,7 @@ button.wear-surface {
   gap: calc(8 * var(--wear-unit));
   padding: calc(9 * var(--wear-unit)) calc(13 * var(--wear-unit));
   border-radius: var(--wear-radius-large);
-  background: var(--wear-color-surface);
+  background: var(--wear-color-surface-container);
   color: var(--wear-color-on-surface);
   line-height: 1.25;
 }
@@ -320,14 +544,19 @@ button.wear-surface {
 }
 
 .wear-surface:focus-visible {
-  outline: 2px solid var(--wear-color-primary);
-  outline-offset: -2px;
+  outline: calc(2 * var(--wear-unit)) solid var(--wear-color-primary);
+  outline-offset: calc(-2 * var(--wear-unit));
   border-radius: var(--wear-radius-large);
 }
 
+/* A disabled business surface resolves the two state layers rather than
+   fading the group, which would leave the accent colour intact. */
 .wear-surface:disabled {
-  opacity: 0.55;
   cursor: default;
+}
+.wear-surface:disabled .wear-surface-visual {
+  background: var(--wear-paint-disabled-container);
+  color: var(--wear-paint-disabled-content);
 }
 
 .wear-visually-hidden,
@@ -350,12 +579,12 @@ button.wear-surface {
   inset-inline-start: 15%;
   inline-size: 70%;
   min-block-size: var(--wear-touch-target);
-  border: 2px solid var(--wear-color-on-primary);
+  border: calc(2 * var(--wear-unit)) solid var(--wear-color-on-primary);
   border-radius: var(--wear-radius-large);
   background: var(--wear-color-primary);
   color: var(--wear-color-on-primary);
   font: inherit;
-  outline: 2px solid var(--wear-color-primary);
+  outline: calc(2 * var(--wear-unit)) solid var(--wear-color-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -19,14 +19,32 @@
   outline-offset: calc(-2 * var(--wear-unit));
 }
 
+/*
+ * Disabled is resolved per layer, never as one group opacity. A whole control
+ * at 0.45 keeps the accent colour intact, while the native scheme replaces the
+ * container with onSurface at 12% and the content with onSurface at 38%
+ * (ColorScheme.kt:413-414, FilledButtonTokens.kt:28-31). Components that own
+ * a richer state table set these two variables themselves.
+ */
 .wear-control:disabled,
 .wear-card:disabled,
 .wear-selection[data-disabled="true"],
 .wear-picker[data-disabled="true"] {
-  opacity: 0.45;
+  --wear-disabled-container: var(--wear-paint-disabled-container);
+  --wear-disabled-content: var(--wear-paint-disabled-content);
   cursor: default;
 }
 
+/*
+ * Buttons. Row, icon and text buttons share the DOM but not the token tables:
+ * each family resolves its own container, label, detail, icon and border
+ * colour, and only the families that really animate their shape do so.
+ *
+ * FilledButtonTokens.kt:25-38, FilledTonalButtonTokens.kt:25-38,
+ * OutlinedButtonTokens.kt:25-38, ChildButtonTokens.kt:25-35,
+ * CompactButtonTokens.kt:25-30, TextButtonTokens.kt:25-32,
+ * IconButtonTokens.kt:25-35, Button.kt:1467-1525.
+ */
 .wear-button {
   display: grid;
   min-block-size: var(--wear-touch-target);
@@ -37,55 +55,144 @@
 }
 
 .wear-button-face {
+  position: relative;
   min-block-size: calc(52 * var(--wear-unit));
   border: calc(1 * var(--wear-unit)) solid transparent;
-  background: var(--wear-color-primary);
-  color: var(--wear-color-on-primary);
-  padding: calc(10 * var(--wear-unit)) calc(14 * var(--wear-unit));
+  background: var(--wear-button-container, var(--wear-color-primary));
+  color: var(--wear-button-label, var(--wear-color-on-primary));
+  /* ButtonDefaults.ContentPadding is 14 x 6, and the icon slot is 26. */
+  padding: calc(6 * var(--wear-unit)) calc(14 * var(--wear-unit));
+  gap: calc(6 * var(--wear-unit));
+  border-radius: inherit;
   transition:
-    border-radius 200ms ease,
-    background-color 180ms ease,
-    transform 180ms ease;
+    border-radius var(--wear-motion-duration-short4) var(--wear-motion-spatial),
+    background-color var(--wear-motion-duration-short3)
+      var(--wear-motion-effects),
+    color var(--wear-motion-duration-short3) var(--wear-motion-effects);
 }
 
-.wear-button[data-variant="tonal"] .wear-button-face {
-  background: var(--wear-color-surface);
-  color: var(--wear-color-on-surface);
+/* Pressed feedback. The browser has no ripple, so a state layer of the
+   content colour is used instead; it is a Web contract, not a native value. */
+.wear-button-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--wear-motion-duration-short2)
+    var(--wear-motion-effects);
+  pointer-events: none;
+}
+.wear-button:active:not(:disabled) .wear-button-face::after {
+  opacity: 0.12;
 }
 
-.wear-button[data-variant="outlined"] .wear-button-face {
-  background: transparent;
-  border-color: var(--wear-color-outline);
-  color: var(--wear-color-primary);
+.wear-button-label {
+  font-size: var(--wear-type-label-medium-size);
+  line-height: var(--wear-type-label-medium-line-height);
+  font-weight: var(--wear-type-label-medium-weight);
+  letter-spacing: var(--wear-type-label-medium-tracking);
 }
 
-.wear-button[data-variant="child"] .wear-button-face {
-  background: transparent;
-  color: var(--wear-color-primary);
+.wear-button-detail {
+  font-size: var(--wear-type-label-small-size);
+  line-height: var(--wear-type-label-small-line-height);
+  font-weight: var(--wear-type-label-small-weight);
+  letter-spacing: var(--wear-type-label-small-tracking);
+  margin-block-start: calc(1 * var(--wear-unit));
+  color: var(--wear-button-detail, var(--wear-color-on-primary));
+  opacity: var(--wear-button-detail-opacity, 0.8);
 }
 
-.wear-button[data-compact="true"] .wear-button-face {
-  min-block-size: calc(32 * var(--wear-unit));
-  align-self: center;
-  padding-block: calc(5 * var(--wear-unit));
-  font-size: var(--wear-type-detail);
+.wear-button[data-variant="tonal"] {
+  --wear-button-container: var(--wear-color-surface-container);
+  --wear-button-label: var(--wear-color-on-surface);
+  --wear-button-detail: var(--wear-color-on-surface-variant);
+  --wear-button-icon: var(--wear-color-primary);
+  --wear-button-detail-opacity: 1;
 }
 
+.wear-button[data-variant="outlined"] {
+  --wear-button-container: transparent;
+  --wear-button-border: var(--wear-color-outline);
+  --wear-button-label: var(--wear-color-on-surface);
+  --wear-button-detail: var(--wear-color-on-surface-variant);
+  --wear-button-icon: var(--wear-color-primary);
+  --wear-button-detail-opacity: 1;
+}
+
+.wear-button[data-variant="child"] {
+  --wear-button-container: transparent;
+  --wear-button-label: var(--wear-color-on-surface);
+  --wear-button-detail: var(--wear-color-on-surface-variant);
+  --wear-button-icon: var(--wear-color-primary);
+  --wear-button-detail-opacity: 1;
+}
+
+/* TextButton: transparent container, onSurface content, circular.
+   TextButton.kt:557-571 + TextButtonTokens.kt:25-32. */
+.wear-button[data-variant="text"] {
+  --wear-button-container: transparent;
+  --wear-button-label: var(--wear-color-on-surface);
+  --wear-button-detail: var(--wear-color-on-surface-variant);
+  --wear-button-icon: var(--wear-color-on-surface);
+  --wear-button-detail-opacity: 1;
+}
+
+.wear-button[data-variant="filled"] {
+  --wear-button-container: var(--wear-color-primary);
+  --wear-button-label: var(--wear-color-on-primary);
+  --wear-button-detail: var(--wear-color-on-primary);
+  --wear-button-icon: var(--wear-color-on-primary);
+  --wear-button-detail-opacity: 0.8;
+}
+
+.wear-button[data-variant="tonal"] .wear-button-face,
+.wear-button[data-variant="outlined"] .wear-button-face,
+.wear-button[data-variant="child"] .wear-button-face,
+.wear-button[data-variant="text"] .wear-button-face {
+  background: var(--wear-button-container);
+  color: var(--wear-button-label);
+  border-color: var(--wear-button-border, transparent);
+}
+
+.wear-button[data-variant="tonal"] .wear-button-icon,
+.wear-button[data-variant="outlined"] .wear-button-icon,
+.wear-button[data-variant="child"] .wear-button-icon {
+  color: var(--wear-button-icon);
+}
+
+/*
+ * A row button keeps one static 26 dp shape: `Button` has no pressed shape in
+ * the fixed sources, so only the circular families morph.
+ */
 .wear-button[data-shape="round"] {
   inline-size: calc(52 * var(--wear-unit));
   block-size: calc(52 * var(--wear-unit));
-  border-radius: 50%;
+  min-inline-size: calc(52 * var(--wear-unit));
+  min-block-size: calc(52 * var(--wear-unit));
+  border-radius: var(--wear-radius-full);
 }
 
 .wear-button[data-shape="round"] .wear-button-face {
   padding: calc(8 * var(--wear-unit));
   justify-content: center;
   text-align: center;
-  border-radius: 50%;
+  border-radius: var(--wear-radius-full);
 }
 .wear-button[data-shape="round"] .wear-label:has(> .wear-icon:only-child) {
   display: grid;
   place-items: center;
+}
+
+/* IconButtonDefaults: 32 / 48 / 52 / 60 containers. IconButton.kt:706-747. */
+.wear-button[data-shape="round"][data-size="extra-small"] {
+  inline-size: calc(32 * var(--wear-unit));
+  block-size: calc(32 * var(--wear-unit));
+  /* The visible box shrinks, the touch target does not. */
+  min-inline-size: var(--wear-touch-target);
+  min-block-size: var(--wear-touch-target);
 }
 
 .wear-button[data-shape="round"][data-size="small"] {
@@ -93,13 +200,89 @@
   block-size: var(--wear-touch-target);
 }
 
-.wear-button[data-shape="round"][data-size="small"] .wear-button-face {
-  min-block-size: calc(40 * var(--wear-unit));
+.wear-button[data-shape="round"][data-size="large"] {
+  inline-size: calc(60 * var(--wear-unit));
+  block-size: calc(60 * var(--wear-unit));
+  min-inline-size: calc(60 * var(--wear-unit));
+  min-block-size: calc(60 * var(--wear-unit));
 }
 
-.wear-button[data-shape="round"][data-size="large"] {
-  inline-size: calc(64 * var(--wear-unit));
-  block-size: calc(64 * var(--wear-unit));
+/* iconSizeFor(): 24 below 52, 26 at 52, 32 at 60. IconButton.kt:520-526. */
+.wear-button[data-shape="round"][data-size="extra-small"] .wear-button-icon,
+.wear-button[data-shape="round"][data-size="small"] .wear-button-icon {
+  inline-size: calc(24 * var(--wear-unit));
+  block-size: calc(24 * var(--wear-unit));
+}
+
+.wear-button[data-shape="round"] .wear-button-icon {
+  inline-size: calc(26 * var(--wear-unit));
+  block-size: calc(26 * var(--wear-unit));
+}
+
+.wear-button[data-shape="round"][data-size="large"] .wear-button-icon {
+  inline-size: calc(32 * var(--wear-unit));
+  block-size: calc(32 * var(--wear-unit));
+}
+
+/* A circular family does animate its shape: pressed becomes shapes.small. */
+.wear-button[data-shape="round"]:active:not(:disabled) .wear-button-face,
+.wear-toggle[aria-pressed]:active:not(:disabled) .wear-button-face {
+  border-radius: var(--wear-radius-small);
+}
+
+.wear-toggle[aria-pressed="true"] .wear-button-face {
+  border-radius: var(--wear-radius-medium);
+}
+
+/*
+ * CompactButton: a 32 dp visible face inside a 48 dp target (8 dp of tap
+ * padding above and below), 18 dp corners, 12 dp of horizontal padding and a
+ * 13 sp label. CompactButtonTokens.kt:25-30, Button.kt:2326-2380.
+ */
+.wear-button[data-compact="true"] {
+  --wear-button-icon-size: calc(20 * var(--wear-unit));
+  padding-block: calc(8 * var(--wear-unit));
+  border-radius: var(--wear-radius-medium);
+}
+
+.wear-button[data-compact="true"] .wear-button-face {
+  min-block-size: calc(32 * var(--wear-unit));
+  align-self: center;
+  padding-block: 0;
+  padding-inline: calc(12 * var(--wear-unit));
+  border-radius: var(--wear-radius-medium);
+}
+
+.wear-button[data-compact="true"] .wear-button-label {
+  font-size: var(--wear-type-label-small-size);
+  line-height: var(--wear-type-label-small-line-height);
+  letter-spacing: var(--wear-type-label-small-tracking);
+}
+
+.wear-button[data-compact="true"] .wear-button-icon {
+  inline-size: var(--wear-button-icon-size);
+  block-size: var(--wear-button-icon-size);
+}
+
+/* Icon-only compact buttons are 52 wide with a 24 dp icon. */
+.wear-button[data-compact="true"][data-icon-only="true"] {
+  inline-size: calc(52 * var(--wear-unit));
+  --wear-button-icon-size: calc(24 * var(--wear-unit));
+}
+
+.wear-button:disabled .wear-button-face {
+  background: var(--wear-disabled-container, var(--wear-paint-disabled-container));
+  color: var(--wear-disabled-content, var(--wear-paint-disabled-content));
+  border-color: var(--wear-disabled-border, transparent);
+}
+
+.wear-button[data-variant="outlined"]:disabled .wear-button-face {
+  --wear-disabled-border: color-mix(
+    in srgb,
+    var(--wear-color-on-surface) 20%,
+    transparent
+  );
+  border-color: var(--wear-disabled-border);
 }
 
 .wear-button[data-shape="edge"] .wear-button-face {
@@ -107,15 +290,6 @@
   border-radius: 40% 40% 60% 60% / 30% 30% 70% 70%;
   min-block-size: calc(56 * var(--wear-unit));
   text-align: center;
-}
-
-.wear-button:active:not(:disabled) .wear-button-face {
-  border-radius: calc(14 * var(--wear-unit));
-  filter: brightness(1.12);
-}
-
-.wear-toggle[aria-pressed="true"] .wear-button-face {
-  border-radius: calc(16 * var(--wear-unit));
 }
 
 .wear-button-group {
@@ -167,32 +341,110 @@
   margin-block-start: calc(2 * var(--wear-unit));
 }
 
+/*
+ * Selection rows. SwitchButtonTokens.kt:22-63, CheckboxButtonTokens.kt:22-49,
+ * RadioButtonTokens.kt:39-51 and the three Split* token tables resolve these
+ * roles; the track, thumb, tick, box, ring and dot each carry their own
+ * colour, and a disabled row resolves them per layer instead of fading the
+ * group.
+ */
 .wear-selection {
+  --wear-selection-container: var(--wear-color-surface-container);
+  --wear-selection-content: var(--wear-color-on-surface);
+  --wear-selection-detail: var(--wear-color-on-surface-variant);
+  --wear-selection-detail-opacity: 1;
+  --wear-selection-tail: var(--wear-color-surface-container-high);
+  --wear-selection-tail-overlay: transparent;
+  --wear-switch-track: var(--wear-color-surface-container);
+  --wear-switch-track-border: var(--wear-color-outline);
+  --wear-switch-thumb: var(--wear-color-outline);
+  --wear-switch-tick: transparent;
+  --wear-selection-mark-fill: var(--wear-color-outline);
   position: relative;
   display: flex;
   min-block-size: calc(52 * var(--wear-unit));
   inline-size: 100%;
   border-radius: var(--wear-radius-large);
-  background: var(--wear-color-surface);
-  color: var(--wear-color-on-surface);
+  background: var(--wear-selection-container);
+  color: var(--wear-selection-content);
   overflow: hidden;
-  transition: background-color 180ms ease;
+  transition: background-color var(--wear-motion-duration-short4)
+    var(--wear-motion-effects);
 }
 
 .wear-selection[data-checked="true"] {
-  background: var(--wear-color-primary-container);
-  color: var(--wear-color-on-primary-container);
+  --wear-selection-container: var(--wear-color-primary-container);
+  --wear-selection-content: var(--wear-color-on-primary-container);
+  --wear-selection-detail: var(--wear-color-on-primary-container);
+  /* Checked secondary labels keep 90% of the onPrimaryContainer role. */
+  --wear-selection-detail-opacity: 0.9;
+  --wear-selection-tail: var(--wear-color-primary-container);
+  --wear-selection-tail-overlay: color-mix(
+    in srgb,
+    var(--wear-color-on-primary-container) 12%,
+    transparent
+  );
+  --wear-switch-track: var(--wear-color-primary);
+  --wear-switch-track-border: var(--wear-color-primary);
+  --wear-switch-thumb: var(--wear-color-primary-container);
+  --wear-switch-tick: var(--wear-color-primary);
+  --wear-selection-mark-fill: var(--wear-color-primary);
+}
+
+/*
+ * Disabled paints, per layer: container onSurface@0.12, content onSurface@0.38,
+ * unchecked thumb onSurface@0.12, checked thumb background@0.38, checked tick
+ * onSurface@0.12 (SwitchButtonTokens.kt:32-55).
+ */
+.wear-selection[data-disabled="true"] {
+  --wear-selection-container: var(--wear-paint-disabled-container);
+  --wear-selection-content: var(--wear-paint-disabled-content);
+  --wear-selection-detail: var(--wear-paint-disabled-content);
+  --wear-selection-detail-opacity: 1;
+  --wear-selection-tail: var(--wear-paint-disabled-container);
+  --wear-selection-tail-overlay: var(--wear-paint-disabled-container-strong);
+  --wear-switch-track: var(--wear-paint-disabled-container);
+  --wear-switch-track-border: var(--wear-paint-disabled-container);
+  --wear-switch-thumb: var(--wear-paint-disabled-container);
+  --wear-selection-mark-fill: var(--wear-paint-disabled-container);
+}
+
+.wear-selection[data-disabled="true"][data-checked="true"] {
+  --wear-switch-thumb: color-mix(
+    in srgb,
+    var(--wear-color-background) 38%,
+    transparent
+  );
+  --wear-switch-tick: var(--wear-paint-disabled-container);
+}
+
+.wear-selection .wear-label {
+  font-size: var(--wear-type-label-medium-size);
+  line-height: var(--wear-type-label-medium-line-height);
+  font-weight: var(--wear-type-label-medium-weight);
+  letter-spacing: var(--wear-type-label-medium-tracking);
+}
+
+.wear-selection .wear-detail {
+  font-size: var(--wear-type-label-small-size);
+  line-height: var(--wear-type-label-small-line-height);
+  font-weight: var(--wear-type-label-small-weight);
+  letter-spacing: var(--wear-type-label-small-tracking);
+  color: var(--wear-selection-detail);
+  opacity: var(--wear-selection-detail-opacity);
 }
 
 .wear-selection-main {
   flex: 1;
   display: flex;
-  gap: calc(8 * var(--wear-unit));
+  /* ToggleSpacing and IconSpacing are both 6 dp. */
+  gap: calc(6 * var(--wear-unit));
   align-items: center;
   min-inline-size: 0;
   min-block-size: var(--wear-touch-target);
-  padding: calc(10 * var(--wear-unit)) calc(56 * var(--wear-unit))
-    calc(10 * var(--wear-unit)) calc(14 * var(--wear-unit));
+  /* SwitchButton.kt:726-728: 14 x 8, with the 48 dp control reserved. */
+  padding: calc(8 * var(--wear-unit)) calc(56 * var(--wear-unit))
+    calc(8 * var(--wear-unit)) calc(14 * var(--wear-unit));
   text-align: start;
 }
 
@@ -249,12 +501,15 @@
   stroke-linejoin: round;
 }
 
+/* Switch: 32 x 22 track, 2 dp border, thumb radius 6 -> 9.
+   SwitchButton.kt:1904-1918, :1973-1978, :2035-2040. */
 .wear-selection[data-kind="switch"] .wear-selection-mark {
   position: relative;
   inline-size: calc(32 * var(--wear-unit));
   block-size: calc(22 * var(--wear-unit));
-  border: calc(2 * var(--wear-unit)) solid var(--wear-color-outline);
-  border-radius: calc(12 * var(--wear-unit));
+  border: calc(2 * var(--wear-unit)) solid var(--wear-switch-track-border);
+  border-radius: calc(11 * var(--wear-unit));
+  background: var(--wear-switch-track);
 }
 
 .wear-selection[data-kind="switch"] .wear-selection-mark::before {
@@ -264,25 +519,29 @@
   block-size: calc(12 * var(--wear-unit));
   inset-inline-start: calc(3 * var(--wear-unit));
   inset-block-start: calc(3 * var(--wear-unit));
-  background: var(--wear-color-outline);
+  background: var(--wear-switch-thumb);
   border-radius: 50%;
   transition:
-    inset-inline-start 180ms ease,
-    width 180ms ease,
-    height 180ms ease;
+    inset-inline-start var(--wear-motion-duration-medium1)
+      var(--wear-motion-spatial),
+    inline-size var(--wear-motion-duration-medium1) var(--wear-motion-spatial),
+    block-size var(--wear-motion-duration-medium1) var(--wear-motion-spatial),
+    background-color var(--wear-motion-duration-short3)
+      var(--wear-motion-effects);
 }
 
 .wear-selection[data-kind="switch"][data-checked="true"] .wear-selection-mark {
-  background: var(--wear-color-primary);
-  border-color: var(--wear-color-primary);
+  background: var(--wear-switch-track);
+  border-color: var(--wear-switch-track-border);
 }
 .wear-selection[data-kind="switch"][data-checked="true"]
   .wear-selection-mark::before {
+  /* The checked thumb reaches radius 9 and sits flush with the inner track. */
   inline-size: calc(18 * var(--wear-unit));
   block-size: calc(18 * var(--wear-unit));
   inset-inline-start: calc(10 * var(--wear-unit));
   inset-block-start: 0;
-  background: var(--wear-color-on-primary);
+  background: var(--wear-switch-thumb);
 }
 .wear-selection[data-kind="switch"] .wear-selection-mark svg {
   display: none;
@@ -295,27 +554,42 @@
   inset-inline-end: 0;
   inline-size: calc(18 * var(--wear-unit));
   block-size: calc(18 * var(--wear-unit));
-  color: var(--wear-color-primary);
+  /* CheckedThumbIconColor = Primary. */
+  color: var(--wear-switch-tick);
+  stroke-width: calc(2 * var(--wear-unit));
 }
 
+/*
+ * Checkbox: an 18 dp box inside a 24 dp control slot, 2 dp stroke and 2 dp
+ * corners; the checkmark is primaryContainer on a primary box
+ * (CheckboxButton.kt:1516-1630). The box is drawn border-box, so the stroke
+ * sits just inside the 18 dp outline instead of straddling it - a sub-dp
+ * difference this contract accepts.
+ */
 .wear-selection[data-kind="checkbox"] .wear-selection-mark,
 .wear-selection[data-kind="radio"] .wear-selection-mark {
   display: grid;
   place-items: center;
-  inline-size: calc(20 * var(--wear-unit));
-  block-size: calc(20 * var(--wear-unit));
-  border: calc(2 * var(--wear-unit)) solid var(--wear-color-outline);
-  border-radius: calc(3 * var(--wear-unit));
+  inline-size: calc(18 * var(--wear-unit));
+  block-size: calc(18 * var(--wear-unit));
+  border: calc(2 * var(--wear-unit)) solid var(--wear-selection-mark-fill);
+  border-radius: calc(2 * var(--wear-unit));
+  background: transparent;
 }
 
 .wear-selection[data-kind="checkbox"] .wear-selection-mark svg {
   opacity: 0;
+  inline-size: calc(14 * var(--wear-unit));
+  block-size: calc(14 * var(--wear-unit));
+  transition: opacity var(--wear-motion-duration-short3)
+    var(--wear-motion-effects);
 }
 .wear-selection[data-kind="checkbox"][data-checked="true"] .wear-selection-mark,
 .wear-selection[data-kind="checkbox"] .wear-selection-mark[data-mixed="true"] {
   background: var(--wear-color-primary);
   border-color: var(--wear-color-primary);
-  color: var(--wear-color-on-primary);
+  /* CheckedCheckmarkColor = PrimaryContainer. */
+  color: var(--wear-color-primary-container);
 }
 .wear-selection[data-kind="checkbox"][data-checked="true"] svg,
 .wear-selection[data-kind="checkbox"]
@@ -323,8 +597,27 @@
   svg {
   opacity: 1;
 }
+.wear-selection[data-disabled="true"][data-kind="checkbox"]
+  .wear-selection-mark {
+  border-color: var(--wear-paint-disabled-container);
+}
+.wear-selection[data-disabled="true"][data-checked="true"][data-kind="checkbox"]
+  .wear-selection-mark {
+  background: var(--wear-paint-disabled-container);
+  border-color: transparent;
+  color: color-mix(
+    in srgb,
+    var(--wear-color-background) 38%,
+    transparent
+  );
+}
+
+/* Radio: ring radius 9 with a 2 dp stroke and a radius 5 dot.
+   Core:SelectionControls.kt:696-698. */
 .wear-selection[data-kind="radio"] .wear-selection-mark {
   border-radius: 50%;
+  inline-size: calc(20 * var(--wear-unit));
+  block-size: calc(20 * var(--wear-unit));
 }
 .wear-selection[data-kind="radio"][data-checked="true"] .wear-selection-mark {
   border-color: var(--wear-color-primary);
@@ -337,35 +630,59 @@
   border-radius: 50%;
   background: var(--wear-color-primary);
 }
+
+/*
+ * Split rows draw two containers, not one: the main section takes the row
+ * container role and the tail takes surfaceContainerHigh, or the primary
+ * container with a 12% onPrimaryContainer overlay once checked. The two
+ * sections meet with the 4 dp SPLIT_SECTIONS_SHAPE corners, and each keeps
+ * its own click target. SplitSwitchButtonTokens.kt:60-67, :26-28.
+ */
 .wear-selection[data-split="true"] {
   gap: calc(2 * var(--wear-unit));
   background: transparent;
 }
 .wear-selection[data-split="true"] .wear-selection-main {
   padding-inline: calc(14 * var(--wear-unit)) calc(8 * var(--wear-unit));
-  background: var(--wear-color-surface);
+  background: var(--wear-selection-container);
+  border-start-start-radius: var(--wear-radius-large);
+  border-end-start-radius: var(--wear-radius-large);
+  border-start-end-radius: var(--wear-radius-extra-small);
+  border-end-end-radius: var(--wear-radius-extra-small);
 }
 .wear-selection[data-split="true"] .wear-selection-end {
   position: relative;
   inset: auto;
   flex: none;
   inline-size: calc(52 * var(--wear-unit));
-  background: var(--wear-color-surface);
+  background:
+    linear-gradient(var(--wear-selection-tail-overlay), var(--wear-selection-tail-overlay)),
+    var(--wear-selection-tail);
+  border-start-start-radius: var(--wear-radius-extra-small);
+  border-end-start-radius: var(--wear-radius-extra-small);
+  border-start-end-radius: var(--wear-radius-large);
+  border-end-end-radius: var(--wear-radius-large);
 }
-.wear-selection[data-split="true"][data-checked="true"] .wear-selection-main,
-.wear-selection[data-split="true"][data-checked="true"] .wear-selection-end {
-  background: var(--wear-color-primary-container);
+.wear-selection[data-split="true"][data-checked="true"] .wear-selection-main {
+  background: var(--wear-selection-container);
 }
 .wear-selection[data-split="true"] .wear-selection-end:focus-within {
   outline: calc(2 * var(--wear-unit)) solid var(--wear-color-primary);
   outline-offset: calc(-3 * var(--wear-unit));
-  border-radius: 0 var(--wear-radius-large) var(--wear-radius-large) 0;
+  border-start-end-radius: var(--wear-radius-large);
+  border-end-end-radius: var(--wear-radius-large);
 }
 .wear-radio-group {
   display: grid;
   gap: var(--wear-gap);
 }
 
+/*
+ * Cards. CardTokens.kt:25-38 gives the slot roles: an 18 dp app icon,
+ * titleSmall name, titleMedium title, labelMedium tertiary subtitle, bodyLarge
+ * content on onSurfaceVariant and bodyMedium time, with 12 x 12 content
+ * padding inside a 64 dp minimum and 26 dp corners (Card.kt:1049-1071).
+ */
 .wear-card-face {
   display: flex;
   flex-direction: column;
@@ -375,11 +692,17 @@
   position: relative;
   overflow: hidden;
   border: calc(1 * var(--wear-unit)) solid transparent;
+  /* CardDefaults.ContentPadding */
+  padding: calc(12 * var(--wear-unit));
+  background: var(--wear-color-surface-container);
+  color: var(--wear-color-on-surface);
 }
 .wear-card[data-variant="outlined"] .wear-card-face {
   background: transparent;
   border-color: var(--wear-color-outline);
 }
+/* A filled card is this library's extension: stable Wear has one container
+   colour for cards and one border for the outlined variant. */
 .wear-card[data-variant="filled"] .wear-card-face {
   background: var(--wear-color-primary-container);
   color: var(--wear-color-on-primary-container);
@@ -387,45 +710,102 @@
 .wear-card-metadata {
   display: flex;
   align-items: center;
-  gap: calc(6 * var(--wear-unit));
-  font-size: var(--wear-type-detail);
+  gap: calc(4 * var(--wear-unit));
+  color: var(--wear-color-on-surface);
+  font-size: var(--wear-type-title-small-size);
+  line-height: var(--wear-type-title-small-line-height);
+  font-weight: var(--wear-type-title-small-weight);
+  letter-spacing: var(--wear-type-title-small-tracking);
   flex-wrap: wrap;
+}
+.wear-card-metadata .wear-icon {
+  /* CardDefaults.AppImageSize */
+  inline-size: calc(18 * var(--wear-unit));
+  block-size: calc(18 * var(--wear-unit));
 }
 .wear-card-time {
   margin-inline-start: auto;
+  gap: calc(6 * var(--wear-unit));
+  color: var(--wear-color-on-surface-variant);
+  font-size: var(--wear-type-body-medium-size);
+  line-height: var(--wear-type-body-medium-line-height);
+  font-weight: var(--wear-type-body-medium-weight);
+}
+.wear-card .wear-label {
+  color: var(--wear-color-on-surface);
+  font-size: var(--wear-type-title-medium-size);
+  line-height: var(--wear-type-title-medium-line-height);
+  font-weight: var(--wear-type-title-medium-weight);
+  letter-spacing: var(--wear-type-title-medium-tracking);
+}
+.wear-card .wear-detail {
+  /* SubtitleFont = LabelMedium, SubtitleColor = Tertiary. */
+  color: var(--wear-color-tertiary);
+  font-size: var(--wear-type-label-medium-size);
+  line-height: var(--wear-type-label-medium-line-height);
+  font-weight: var(--wear-type-label-medium-weight);
 }
 .wear-card-content {
   display: block;
-  font-size: var(--wear-type-body);
+  font-size: var(--wear-type-body-large-size);
+  line-height: var(--wear-type-body-large-line-height);
+  color: var(--wear-color-on-surface-variant);
   overflow-wrap: anywhere;
 }
 .wear-card-media {
   display: block;
+  margin: calc(-12 * var(--wear-unit)) calc(-12 * var(--wear-unit))
+    calc(6 * var(--wear-unit));
 }
 .wear-card-media > :is(img, video) {
   inline-size: 100%;
+  block-size: calc(72 * var(--wear-unit));
+  object-fit: cover;
   border-radius: calc(12 * var(--wear-unit));
   display: block;
 }
+/* TitleCard puts the title and the time on one row; AppCard keeps the app
+   header row above them. Card.kt:722-786, :819-884. */
+.wear-card[data-layout="title"] .wear-card-heading {
+  display: flex;
+  align-items: baseline;
+  gap: calc(4 * var(--wear-unit));
+}
+.wear-card[data-layout="title"] .wear-card-heading .wear-label {
+  flex: 1;
+}
+.wear-card[data-layout="title"] .wear-card-time {
+  margin-inline-start: 0;
+  flex: none;
+}
+
+/* ListHeader.kt:74-96, :132-157 and the two header token tables. */
 .wear-list-header {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: calc(6 * var(--wear-unit));
   margin: 0;
-  padding: calc(12 * var(--wear-unit)) calc(4 * var(--wear-unit));
+  min-block-size: calc(48 * var(--wear-unit));
+  padding: calc(16 * var(--wear-unit)) calc(14 * var(--wear-unit))
+    calc(12 * var(--wear-unit));
   color: var(--wear-color-on-background);
-  font-size: var(--wear-type-title);
-  line-height: 1.2;
+  font-size: var(--wear-type-title-medium-size);
+  line-height: var(--wear-type-title-medium-line-height);
+  font-weight: var(--wear-type-title-medium-weight);
+  letter-spacing: var(--wear-type-title-medium-tracking);
   text-align: center;
   overflow-wrap: anywhere;
 }
 .wear-list-header[data-subheader="true"] {
   justify-content: flex-start;
   text-align: start;
-  color: var(--wear-color-on-surface-variant);
-  font-size: var(--wear-type-detail);
-  padding-inline: calc(12 * var(--wear-unit));
+  /* ListSubHeader: titleSmall on onSurface, 8 dp of bottom padding. */
+  color: var(--wear-color-on-surface);
+  font-size: var(--wear-type-title-small-size);
+  line-height: var(--wear-type-title-small-line-height);
+  font-weight: var(--wear-type-title-small-weight);
+  padding-block: calc(16 * var(--wear-unit)) calc(8 * var(--wear-unit));
 }
 .wear-text {
   font-size: var(--wear-type-body);
@@ -495,7 +875,7 @@
 .wear-placeholder {
   min-block-size: calc(52 * var(--wear-unit));
   border-radius: var(--wear-radius-large);
-  background: var(--wear-color-surface);
+  background: var(--wear-color-surface-container);
   overflow: hidden;
   position: relative;
 }
@@ -515,14 +895,23 @@
   }
 }
 
+/*
+ * Slider. Two bars of different thickness, not one filled groove: the
+ * selected bar is 12 dp and the unselected bar 4 dp, separated by 2 dp radius
+ * dots that take a different colour on each side (Slider.kt:768-857,
+ * SliderTokens.kt:22-42). Wear keeps the plus/minus buttons as the control -
+ * there is no dragged thumb to add.
+ */
 .wear-slider {
   display: flex;
   align-items: center;
   inline-size: 100%;
+  /* SliderTokens.MinHeight */
   min-block-size: calc(52 * var(--wear-unit));
   border-radius: var(--wear-radius-large);
-  background: var(--wear-color-surface);
-  color: var(--wear-color-primary);
+  background: var(--wear-color-surface-container);
+  /* SliderButtonIconColor */
+  color: var(--wear-color-on-surface);
   overflow: hidden;
 }
 .wear-slider-button {
@@ -532,7 +921,10 @@
   flex: none;
   min-inline-size: var(--wear-touch-target);
   min-block-size: var(--wear-touch-target);
-  font-size: var(--wear-type-title);
+  color: var(--wear-color-on-surface);
+}
+.wear-slider-button:disabled {
+  color: var(--wear-paint-disabled-content);
 }
 .wear-slider-button,
 .wear-stepper-button {
@@ -541,30 +933,82 @@
 .wear-slider-track {
   flex: 1;
   min-inline-size: calc(16 * var(--wear-unit));
+  /* SliderTokens.BarHeight */
   block-size: calc(12 * var(--wear-unit));
   position: relative;
-  background: var(--wear-color-outline);
-  border-radius: calc(6 * var(--wear-unit));
+  display: flex;
+  align-items: center;
+}
+/* Unselected bar: 4 dp, centred on the track. */
+.wear-slider-bar {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  block-size: calc(var(--wear-slider-unselected, 4) * var(--wear-unit));
+  border-radius: calc(2 * var(--wear-unit));
+  /* UnselectedBarColor = background at 30% alpha. */
+  background: color-mix(
+    in srgb,
+    var(--wear-color-background) 30%,
+    transparent
+  );
 }
 .wear-slider-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
   display: block;
   inline-size: var(--wear-range-progress);
-  block-size: 100%;
-  background: var(--wear-color-primary);
-  border-radius: inherit;
+  block-size: calc(12 * var(--wear-unit));
+  background: var(--wear-slider-indicator, var(--wear-color-primary));
+  border-radius: calc(6 * var(--wear-unit));
+  transition: inline-size var(--wear-motion-duration-short3)
+    var(--wear-easing-standard-decelerate);
 }
-.wear-slider-track[data-segmented="true"]::after {
-  content: "";
+/* Segmented bars gain SEGMENT_BAR_PADDING. */
+.wear-slider-track[data-segmented="true"] .wear-slider-fill {
+  inline-size: calc(var(--wear-range-progress) + 4 * var(--wear-unit));
+}
+/*
+ * Separator dots: x = i * (width + 2r) / visibleSegments - r, with r = 2 dp,
+ * which is the native placement formula (Slider.kt:789-794).
+ */
+.wear-slider-separator {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to right,
-    transparent 0,
-    transparent calc(100% / var(--wear-range-segments) - 2px),
-    var(--wear-color-surface) calc(100% / var(--wear-range-segments) - 2px),
-    var(--wear-color-surface) calc(100% / var(--wear-range-segments))
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  inset-inline-start: calc(
+    ((100% + 4 * var(--wear-unit)) * var(--wear-separator-index) /
+      var(--wear-separator-count)) - 2 * var(--wear-unit)
   );
+  inline-size: calc(4 * var(--wear-unit));
+  block-size: calc(4 * var(--wear-unit));
+  border-radius: 50%;
+  background: var(--wear-color-primary);
+  opacity: 0.5;
+}
+.wear-slider-separator[data-on="active"] {
+  background: var(--wear-color-primary-container);
+  opacity: 1;
+}
+.wear-slider[data-disabled="true"] {
+  background: var(--wear-paint-disabled-container);
+}
+.wear-slider[data-disabled="true"] .wear-slider-fill {
+  --wear-slider-indicator: var(--wear-color-outline-variant);
+  background: var(--wear-color-outline-variant);
+}
+.wear-slider[data-disabled="true"] .wear-slider-separator {
+  background: color-mix(
+    in srgb,
+    var(--wear-color-outline-variant) 50%,
+    transparent
+  );
+}
+.wear-slider[data-disabled="true"] .wear-slider-separator[data-on="active"] {
+  background: var(--wear-color-surface-container);
+  opacity: 1;
 }
 .wear-slider-track input {
   position: absolute;
@@ -581,26 +1025,68 @@
   outline: 2px solid var(--wear-color-primary);
   outline-offset: calc(4 * var(--wear-unit));
 }
+/*
+ * Stepper: a full-height 0.35 / 0.30 / 0.35 arrangement with 60 x 48 dp
+ * control faces and 8 dp of spacing, not two circles around a number
+ * (Stepper.kt:378-485).
+ */
 .wear-stepper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(8 * var(--wear-unit));
+  display: grid;
+  grid-template-rows: 0.35fr 0.3fr 0.35fr;
+  place-items: center;
+  row-gap: calc(8 * var(--wear-unit));
   min-block-size: 100%;
+  /* StepperDefaults.verticalContentPadding = 5.2% of the screen. */
+  padding-block: 5.2%;
   border-radius: var(--wear-radius-large);
+  color: var(--wear-color-on-surface);
+}
+.wear-stepper > .wear-stepper-button:first-child {
+  align-self: start;
+}
+.wear-stepper > .wear-stepper-button:last-child {
+  align-self: end;
+}
+.wear-stepper-button.wear-button[data-shape="round"] {
+  inline-size: calc(60 * var(--wear-unit));
+  block-size: calc(48 * var(--wear-unit));
+  min-inline-size: var(--wear-touch-target);
+  min-block-size: var(--wear-touch-target);
+  --wear-button-container: var(--wear-color-primary-container);
+  --wear-button-icon: var(--wear-color-primary);
+  --wear-button-label: var(--wear-color-primary);
+}
+.wear-stepper-button.wear-button[data-shape="round"] .wear-button-face {
+  border-radius: var(--wear-radius-full);
+  padding: calc(8 * var(--wear-unit));
+}
+.wear-stepper-button.wear-button:disabled .wear-button-face {
+  background: var(--wear-paint-disabled-container);
+  color: var(--wear-paint-disabled-content);
 }
 .wear-stepper-value {
   display: block;
-  font-size: var(--wear-type-display);
+  /* Stepper numbers use a numeral role, not the display ramp. */
+  font-size: var(--wear-type-numeral-medium-size);
+  font-weight: var(--wear-type-numeral-medium-weight);
+  line-height: 1;
   color: var(--wear-color-on-background);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
+/*
+ * Progress family. `--wear-progress-box` and `--wear-progress-stroke` are
+ * logical dp sizes written by the component, and the SVG viewBox equals the
+ * box in dp, so a stroke here is a stroke on screen at any diameter.
+ *
+ * Colour roles: ProgressIndicator.kt:113-131 (indicator primary, track
+ * surfaceContainer, overflow primary at 0.6, disabled onSurface at 0.38 /
+ * 0.12) and LevelIndicator.kt:218-231 (indicator secondaryDim).
+ */
 .wear-progress {
   display: inline-block;
-  inline-size: calc(48 * var(--wear-unit));
-  block-size: calc(48 * var(--wear-unit));
+  inline-size: calc(var(--wear-progress-box) * var(--wear-unit));
+  block-size: calc(var(--wear-progress-box) * var(--wear-unit));
 }
 .wear-progress svg {
   display: block;
@@ -608,73 +1094,26 @@
   block-size: 100%;
   overflow: visible;
 }
-.wear-progress-track,
-.wear-progress-active {
+.wear-progress :is(.wear-progress-track, .wear-progress-active, .wear-progress-overflow) {
   fill: none;
-  stroke-width: 7;
   stroke-linecap: round;
+  stroke-width: var(--wear-progress-stroke);
 }
 .wear-progress-track {
-  stroke: var(--wear-color-surface);
+  stroke: var(--wear-color-surface-container);
+  transition: stroke-dasharray var(--wear-motion-duration-short4)
+    var(--wear-motion-effects);
 }
 .wear-progress-active {
   stroke: var(--wear-color-primary);
-  transition: stroke-dasharray 200ms ease;
+  transition: stroke-dasharray var(--wear-motion-duration-short4)
+    var(--wear-motion-effects);
 }
-.wear-progress[data-variant="linear"] {
-  inline-size: 100%;
-  block-size: calc(6 * var(--wear-unit));
+.wear-progress-overflow {
+  stroke: color-mix(in srgb, var(--wear-color-primary) 60%, transparent);
 }
-.wear-progress-line {
-  display: block;
-  position: relative;
-  inline-size: 100%;
-  block-size: 100%;
-  background: var(--wear-color-surface);
-  border-radius: 100px;
-  overflow: hidden;
-}
-.wear-progress-line > span {
-  display: block;
-  inline-size: var(--wear-progress);
-  block-size: 100%;
-  border-radius: inherit;
-  background: var(--wear-color-primary);
-  transition: width 200ms ease;
-}
-.wear-progress[data-pending="true"]:not([data-variant="linear"]):not(
-    [data-variant="level"]
-  ):not([data-variant="arc"])
-  svg {
-  animation: wear-spin 1500ms linear infinite;
-}
-.wear-progress[data-pending="true"][data-variant="linear"]
-  .wear-progress-line
-  > span {
-  animation: wear-linear 1400ms ease-in-out infinite alternate;
-}
-.wear-progress[data-pending="true"]:is(
-    [data-variant="arc"],
-    [data-variant="level"]
-  )
-  .wear-progress-active {
-  animation: wear-arc 1300ms ease-in-out infinite alternate;
-}
-@keyframes wear-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes wear-linear {
-  to {
-    transform: translateX(300%);
-  }
-}
-@keyframes wear-arc {
-  to {
-    stroke-dashoffset: -75;
-  }
-}
+
+/* LevelIndicator lives on the screen circle, not in an inline box. */
 .wear-progress[data-variant="level"] {
   position: absolute;
   inset: 0;
@@ -682,9 +1121,181 @@
   block-size: 100%;
   pointer-events: none;
 }
-.wear-progress[data-variant="level"]
-  :is(.wear-progress-track, .wear-progress-active) {
-  stroke-width: 2;
+.wear-progress[data-variant="level"] .wear-progress-active {
+  stroke: var(--wear-color-secondary-dim);
+}
+
+/*
+ * Linear: 12 dp (8 dp small) with a 2 dp outer margin, the active stroke
+ * measured as progress * (width - stroke), and the independent endpoint dot
+ * that shrinks and fades as the bar reaches it. LinearProgressIndicator.kt:138-205.
+ */
+.wear-progress[data-variant="linear"] {
+  inline-size: 100%;
+  block-size: var(--wear-progress-stroke);
+}
+.wear-progress-line {
+  display: block;
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  margin-inline: calc(var(--wear-progress-margin, 2) * var(--wear-unit));
+  background: var(--wear-color-surface-container);
+  border-radius: 100vmax;
+  overflow: visible;
+}
+.wear-progress-line-active {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--wear-progress, 0%);
+  border-radius: 100vmax;
+  background: var(--wear-color-primary);
+  transition: inline-size var(--wear-motion-duration-short4)
+    var(--wear-motion-effects);
+}
+.wear-progress-line-dot {
+  position: absolute;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: var(--wear-color-primary);
+}
+
+.wear-progress[data-disabled="true"] .wear-progress-active {
+  stroke: var(--wear-paint-disabled-content);
+}
+.wear-progress[data-disabled="true"] :is(.wear-progress-track, .wear-progress-overflow) {
+  stroke: var(--wear-paint-disabled-container);
+}
+.wear-progress[data-disabled="true"][data-variant="linear"] .wear-progress-line {
+  background: var(--wear-paint-disabled-container);
+}
+.wear-progress[data-disabled="true"] :is(.wear-progress-line-active, .wear-progress-line-dot) {
+  background: var(--wear-paint-disabled-content);
+}
+
+/*
+ * Indeterminate circular motion keeps the native 5000 ms structure: a linear
+ * global rotation of 1440 degrees, an additional 720 degrees that runs for
+ * 1250 ms and then holds, and a progress arc that breathes 0 -> 0.8 -> 0.2 ->
+ * 0.8 -> 0 across the same five seconds (CircularProgressIndicator.kt:583-620).
+ */
+.wear-progress-indeterminate {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: wear-spin 5000ms linear infinite;
+}
+.wear-progress-indeterminate-phase {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: wear-spin-extra 5000ms var(--wear-easing-standard) infinite;
+}
+.wear-progress-indeterminate-active {
+  animation: wear-indeterminate-active 5000ms var(--wear-easing-standard)
+    infinite;
+  transition: none;
+}
+.wear-progress-indeterminate-track {
+  animation: wear-indeterminate-track 5000ms var(--wear-easing-standard)
+    infinite;
+  transition: none;
+}
+@keyframes wear-spin {
+  from {
+    transform: rotate(270deg);
+  }
+  to {
+    transform: rotate(1710deg);
+  }
+}
+@keyframes wear-spin-extra {
+  0%,
+  25% {
+    transform: rotate(0deg);
+  }
+  50%,
+  75% {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(720deg);
+  }
+}
+@keyframes wear-indeterminate-active {
+  0% {
+    stroke-dasharray: 0 100;
+  }
+  25%,
+  75% {
+    stroke-dasharray: 80 100;
+  }
+  50% {
+    stroke-dasharray: 20 100;
+  }
+  to {
+    stroke-dasharray: 0 100;
+  }
+}
+@keyframes wear-indeterminate-track {
+  0% {
+    stroke-dasharray: 100 100;
+    stroke-dashoffset: 0;
+  }
+  25%,
+  75% {
+    stroke-dasharray: 20 100;
+    stroke-dashoffset: -80;
+  }
+  50% {
+    stroke-dasharray: 80 100;
+    stroke-dashoffset: -20;
+  }
+  to {
+    stroke-dasharray: 100 100;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ArcProgressIndicator sweeps a head and tail through its 65-115 degree span.
+   The native head and tail animate independently; one travelling dash is the
+   documented Web approximation of that phase animation. */
+.wear-progress[data-pending="true"][data-variant="arc"] .wear-progress-active {
+  animation: wear-arc 2000ms var(--wear-easing-standard) infinite;
+}
+@keyframes wear-arc {
+  0% {
+    stroke-dasharray: 8 100;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 34 100;
+    stroke-dashoffset: -30;
+  }
+  to {
+    stroke-dasharray: 8 100;
+    stroke-dashoffset: -92;
+  }
+}
+
+/* A linear bar with no value is a library extension, not the native API. */
+.wear-progress[data-pending="true"][data-variant="linear"]
+  .wear-progress-line-active {
+  animation: wear-linear 1400ms ease-in-out infinite alternate;
+  inline-size: 25%;
+}
+.wear-progress[data-pending="true"][data-variant="linear"]
+  .wear-progress-line-dot {
+  display: none;
+}
+@keyframes wear-linear {
+  to {
+    transform: translateX(300%);
+  }
+}
+.wear-progress[data-pending="true"][data-variant="level"]
+  .wear-progress-active {
+  animation: wear-arc 1300ms ease-in-out infinite alternate;
 }
 
 .wear-picker-group {
@@ -993,9 +1604,11 @@
   height: 100%;
   overflow: visible;
 }
+/* The arc role is written on the <text> element itself, in logical dp, so the
+   glyph size does not follow the viewBox or the host font scale. */
 .wear-curved-text text {
   fill: currentColor;
-  font-size: calc(16px * var(--wear-font-scale, 1));
+  font-variant-numeric: tabular-nums;
 }
 .wear-curved-box {
   position: absolute;
@@ -1115,7 +1728,7 @@
 }
 .wear-reveal-secondary,
 .wear-reveal-access {
-  background: var(--wear-color-surface);
+  background: var(--wear-color-surface-container);
   color: var(--wear-color-on-surface);
 }
 .wear-reveal-access {
@@ -1193,7 +1806,7 @@
   inline-size: calc(40 * var(--wear-unit));
   block-size: calc(40 * var(--wear-unit));
   border-radius: 50%;
-  background: var(--wear-color-surface);
+  background: var(--wear-color-surface-container);
   color: var(--wear-color-primary);
   transform: translateY(
     calc(var(--wear-refresh-travel) * var(--wear-unit) - 100%)
