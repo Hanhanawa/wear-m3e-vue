@@ -418,6 +418,13 @@ export const wearProgress = {
   /** Screen anchors used by ResponsiveTransformationSpec + isSmallScreen(). */
   smallScreen: 192,
   largeScreen: 240,
+  /**
+   * ResponsiveTransformationSpec.kt:102,169: the container scale at the edge
+   * of the list is 0.7 on a 192 screen and 0.6 on a 240 one, and both the
+   * container and the content alpha reach 0.5 there (":100-101, :167-168").
+   */
+  listEdgeScale: [0.7, 0.6] as const,
+  listAlphaEdge: 0.5,
 } as const;
 
 /**

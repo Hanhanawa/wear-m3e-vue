@@ -820,6 +820,13 @@
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
+/* An explicit Wear role carries its own size, line height, weight and tracking. */
+.wear-text[data-role] {
+  font-size: var(--wear-text-size);
+  line-height: var(--wear-text-line);
+  font-weight: var(--wear-text-weight);
+  letter-spacing: var(--wear-text-tracking);
+}
 .wear-text[data-variant="display"] {
   font-size: var(--wear-type-display);
   font-weight: 600;
