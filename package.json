@@ -1,6 +1,6 @@
 {
   "name": "@hanhanawa/wear-m3e-vue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vue components for round Wear Material 3 Expressive layouts",
   "author": "hanhanawa",
   "type": "module",

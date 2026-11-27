@@ -64,14 +64,14 @@ After a successful run, download the `wear-m3e-vue-package` artifact from that r
 
 Use npm CLI 11.15.0 or later. After **Verify package** passes for the release commit on `main`, download and extract its `wear-m3e-vue-package` artifact. Use the npm account with publish access to the `@hanhanawa` scope and enable two-factor authentication for approval.
 
-For the first release, the exact archive from a successful release PR check may also be staged before merge for review. After the PR is merged and its `main` build passes, compare the SHA-256 of the archive from `npm stage download <stage-id>` with the `.tgz` in the verified `main` artifact. Approve only if the two hashes match.
-
 From the extracted artifact directory, verify the checksum and stage the tested archive.
 
 ```sh
+set -- ./hanhanawa-wear-m3e-vue-*.tgz
+test "$#" -eq 1 && test -f "$1" &&
 sha256sum -c SHA256SUMS &&
 npm whoami --registry https://registry.npmjs.org/ &&
-npm stage publish ./hanhanawa-wear-m3e-vue-0.1.0.tgz --access public --registry https://registry.npmjs.org/
+npm stage publish "$1" --access public --registry https://registry.npmjs.org/
 ```
 
-Review the stage ID and package contents in npm's **Staged Packages** interface or with `npm stage view <stage-id>`. The `0.1.0` release becomes public after a maintainer approves it with two-factor authentication. On the first stage, npm may create a public `0.0.0-stage` placeholder. [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
+Review the stage ID and package contents in npm's **Staged Packages** interface or with `npm stage view <stage-id>`. The release becomes public after a maintainer approves it with two-factor authentication. [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
