@@ -71,6 +71,7 @@ export function useLogicalSize(target: Ref<Element | undefined>): LogicalSize {
     observer = new ResizeObserver(([entry]) =>
       apply(entry.contentRect.width, entry.contentRect.height, node),
     );
+    observer.observe(node);
     read(node);
   }
 

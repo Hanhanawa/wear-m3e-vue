@@ -291,7 +291,7 @@ const lineDot = computed<CSSProperties | null>(() => {
     :data-overflow="overflowActive || undefined"
     :data-side="variant === 'level' ? side : undefined"
     :style="{
-      '--wear-progress-box': `${canvas}px`,
+      '--wear-progress-box': String(canvas),
       '--wear-progress-stroke': `calc(${stroke} * var(--wear-unit))`,
     }"
     role="progressbar"
@@ -345,6 +345,7 @@ const lineDot = computed<CSSProperties | null>(() => {
           />
           <circle
             v-else-if="entry.dot"
+            class="wear-progress-dot"
             :cx="entry.dot.x"
             :cy="entry.dot.y"
             :r="entry.dot.r"

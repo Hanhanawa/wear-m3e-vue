@@ -213,9 +213,9 @@ export function resolveColorScheme(
   // `surface` is an alias, never its own variable, so that a legacy override
   // still repaints the container roles the components consume.
   if (provided.surfaceContainer) {
-    if (!input?.surfaceContainerLow)
+    if (!provided.surfaceContainerLow)
       scheme.surfaceContainerLow = toneShift(provided.surfaceContainer, -0.045);
-    if (!input?.surfaceContainerHigh)
+    if (!provided.surfaceContainerHigh)
       scheme.surfaceContainerHigh = toneShift(provided.surfaceContainer, 0.055);
   }
   const accents = [

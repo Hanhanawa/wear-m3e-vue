@@ -461,7 +461,7 @@ export function pageIndicatorGeometry({
   const center: [number, number] = [diameter / 2, diameter / 2];
   // RTL mirrors the arc: the same slots run the other way round it.
   const angleAt = (slot: number) =>
-    anchorAngle + (rtl ? -1 : 1) * (slot - (visible - 1) / 2) * pitch;
+    anchorAngle + (rtl ? 1 : -1) * (slot - (visible - 1) / 2) * pitch;
   const dots = Array.from({ length: visible }, (_, i) => {
     const edge =
       (i === 0 && windowStart > 0) ||

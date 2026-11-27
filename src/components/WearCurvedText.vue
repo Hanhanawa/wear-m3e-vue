@@ -57,10 +57,10 @@ const path = computed(() => {
   const center: [number, number] = [d / 2, d / 2];
   // A half circle at most, centred on the top or bottom of the screen.
   const sweep = 180;
-  const [x1, y1] = polar(center, radius.value, bottom.value ? 90 - sweep / 2 : -90 - sweep / 2);
-  const [x2, y2] = polar(center, radius.value, bottom.value ? 90 + sweep / 2 : -90 + sweep / 2);
-  // Angles are ordered clockwise, so the sweep flag is always 1.
-  return `M${x1} ${y1} A${radius.value} ${radius.value} 0 0 1 ${x2} ${y2}`;
+  const [x1, y1] = polar(center, radius.value, bottom.value ? 90 + sweep / 2 : -90 - sweep / 2);
+  const [x2, y2] = polar(center, radius.value, bottom.value ? 90 - sweep / 2 : -90 + sweep / 2);
+  // The lower arc runs counter-clockwise to keep its glyphs upright.
+  return `M${x1} ${y1} A${radius.value} ${radius.value} 0 0 ${bottom.value ? 0 : 1} ${x2} ${y2}`;
 });
 </script>
 

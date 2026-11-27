@@ -261,6 +261,22 @@ test("the page indicator window holds at most six dots", () => {
   assert.equal(geometry.dots[3].scale, 1);
 });
 
+test("horizontal page order follows LTR and mirrors in RTL", () => {
+  for (const rtl of [false, true]) {
+    const { dots, pointAt } = pageIndicatorGeometry({
+      diameter: 240,
+      count: 4,
+      progress: 0,
+      rtl,
+    });
+    for (let index = 1; index < dots.length; index += 1)
+      assert.equal(dots[index].x > dots[index - 1].x, !rtl);
+    const midpoint = pointAt(0.5);
+    assert.ok(midpoint[0] > Math.min(dots[0].x, dots[1].x));
+    assert.ok(midpoint[0] < Math.max(dots[0].x, dots[1].x));
+  }
+});
+
 /* ------------------------------------------------------------ tokens */
 
 test("a four-role brand input still resolves every consumable role", () => {
@@ -304,6 +320,20 @@ test("the legacy surface alias maps onto surfaceContainer", () => {
     colorSchemeVars({ surface: "#123456" })["--wear-color-surface-container"],
     "#123456",
   );
+});
+
+test("explicit surface tones survive normalization of legacy role names", () => {
+  for (const [low, high] of [
+    ["surfaceContainerLow", "surfaceContainerHigh"],
+    ["surface-container-low", "surface-container-high"],
+    ["surface_container_low", "surface_container_high"],
+  ]) {
+    const input = { surface: "#332e3c", [low]: "#abcdef", [high]: "#123456" };
+    const scheme = resolveColorScheme(input);
+    assert.equal(scheme.surfaceContainerLow, "#abcdef");
+    assert.equal(scheme.surfaceContainerHigh, "#123456");
+    assert.equal(colorSchemeVars(input)["--wear-color-surface-container-high"], "#123456");
+  }
 });
 
 test("type roles carry the sizes the components consume", () => {

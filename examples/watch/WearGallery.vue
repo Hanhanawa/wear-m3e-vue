@@ -950,6 +950,7 @@ onUnmounted(() => {
 }
 .gallery-rings {
   display: flex;
+  flex-wrap: wrap;
   gap: calc(16 * var(--wear-unit));
   justify-content: center;
   padding-block: calc(12 * var(--wear-unit));
