@@ -29,10 +29,22 @@ import { WearScaffold, WearTimeText, WearPager } from "@hanhanawa/wear-m3e-vue";
 import "@hanhanawa/wear-m3e-vue/style.css";
 ```
 
+## Default appearance
+
+The component drawing layer now follows the pinned Wear Material 3 token and
+geometry contracts, which changes the default look: the palette uses the Wear
+token values and the full set of surface and accent roles, row labels are 15sp
+with 13sp details, progress rings keep a real gap between the active arc and the
+track, linear bars are 12dp with an endpoint dot, split rows show two distinct
+containers, and disabled controls resolve container and content layers instead
+of fading the whole group. Pass your own `colors` to pin a previous palette, and
+see the migration notes in the remediation record.
+
 ## Guides
 
 - [Integration and WebView host](docs/integration.md)
 - [Component reference and catalog](docs/components.md)
+- [Audit remediation record](docs/remediation.md)
 - [Development, CI, and verified package archives](docs/development.md)
 - [Design sources and browser compatibility](SOURCES.md)
 - [Apache-2.0 license](LICENSE)

@@ -29,10 +29,19 @@ import { WearScaffold, WearTimeText, WearPager } from "@hanhanawa/wear-m3e-vue";
 import "@hanhanawa/wear-m3e-vue/style.css";
 ```
 
+## 默认外观
+
+组件绘制层现已对齐固定的 Wear Material 3 Token 与几何约定，默认外观因此变化：
+色板改用 Wear Token 数值并补全 surface 与强调色角色，行按钮主标签为 15sp、
+次标签 13sp，进度环的活动弧与剩余轨道之间保留真实间隙，横条进度为 12dp 并带
+独立终点圆点，split 行显示两种不同容器色，禁用状态分层解析而不再整体降低透明度。
+如需保留原有配色，请自行传入 `colors`；迁移说明见修复记录。
+
 ## 指南
 
 - [接入方式与 WebView 宿主](docs/integration.md)
 - [组件参考与目录](docs/components.md)
+- [审计修复记录](docs/remediation.md)
 - [开发、CI 与已验证的包归档](docs/development.md)
 - [设计来源与浏览器兼容性](SOURCES.md)
 - [Apache-2.0 许可证](LICENSE)
