@@ -13,6 +13,28 @@ corepack pnpm build
 
 Run `corepack pnpm demo` for the four-page demo on port 5173 and `corepack pnpm catalog` for the component catalog on port 5174. These commands select the page at the root URL and fail if their port is occupied. Run them in separate terminals. `corepack pnpm example` serves the original query-based entry, where `/?catalog` opens the catalog. Rebuild the library after changes to its source.
 
+## Working with the dp contract
+
+Every size in this library is a logical Wear dp, converted once: `d` dp becomes
+`d / hostScale` CSS px through `calc(d * var(--wear-unit))`, and the host scales
+the WebView back up. Two consequences are worth knowing before changing a
+component.
+
+An SVG cannot carry CSS units in its `viewBox`, so a component measures its own
+box, divides by `--wear-unit`, and writes that number as its viewBox. One user
+unit is then one dp, and strokes, dots and arc text keep their physical size at
+192dp, 240dp and any host scale. Never hard-code a 240-unit coordinate space
+again; that is what made a "6 unit" dot render as 4.96dp on a small screen.
+
+Measure layout boxes, not visual boxes. `getBoundingClientRect()` includes the
+transform a transforming list applies to its rows, so an element inside a row
+scaled to 0.57 reports 57% of its real width and every radius, dot and gap
+derived from it shrinks with it. `ResizeObserverEntry.contentRect` and
+`clientWidth` are pre-transform, which is what `src/measure.ts` uses. When
+checking a value in a browser, read `offsetWidth` or the computed `blockSize`
+rather than the bounding rectangle, or the scaled row will look wrong when it is
+correct.
+
 ## Test as an independent Vue consumer
 
 ```sh

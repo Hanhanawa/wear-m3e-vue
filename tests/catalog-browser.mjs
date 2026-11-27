@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
@@ -12,6 +13,188 @@ const browser = await chromium.launch({
 });
 console.log(`Catalog Chromium ${browser.version()}`);
 const failures = [];
+
+// Exercise public props not exposed by the gallery, using the built package
+// and Vue's browser runtime. These routes exist only in this test context.
+const componentAssets = {
+  "library.js": readFileSync(new URL("../dist/wear-m3e-vue.js", import.meta.url), "utf8"),
+  "style.css": readFileSync(new URL("../dist/style.css", import.meta.url), "utf8"),
+  "vue.js": readFileSync(createRequire(import.meta.url).resolve("vue/dist/vue.esm-browser.prod.js"), "utf8"),
+};
+
+async function setupComponents(components, scale = 1, dir = "ltr") {
+  const page = await browser.newPage({
+    viewport: { width: 240, height: 240 },
+    reducedMotion: "reduce",
+  });
+  page.setDefaultTimeout(5000);
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.route(`${origin}/__component-test/**`, (route) => {
+    const name = new URL(route.request().url()).pathname.split("/").pop();
+    return route.fulfill({
+      contentType: name === "style.css" ? "text/css" : name ? "text/javascript" : "text/html",
+      body: name ? componentAssets[name] : `<!doctype html>
+        <style>html,body{margin:0}#host{width:${240 / scale}px;height:${240 / scale}px;transform:scale(${scale});transform-origin:0 0}</style>
+        <link rel="stylesheet" href="style.css">
+        <script type="importmap">{"imports":{"vue":"./vue.js"}}</script>
+        <div id="host"></div>`,
+    });
+  });
+  await page.goto(`${origin}/__component-test/`);
+  await page.evaluate(async ({ components, scale, dir }) => {
+    const { createApp, h, reactive } = await import("./vue.js");
+    const library = await import("./library.js");
+    window.components = reactive(components);
+    createApp({
+      render: () => h(library.WearScaffold, { hostScale: scale, dir }, {
+        default: () => window.components.map(({ name, props, slots }, index) =>
+          h(library[name], { ...props, key: index }, Object.fromEntries(
+            Object.entries(slots ?? {}).map(([name, text]) => [name, () => text]),
+          ))),
+      }),
+    }).mount("#host");
+  }, { components, scale, dir });
+  return { page, errors };
+}
+
+function near(actual, expected) {
+  assert.ok(Math.abs(actual - expected) < 0.1, `expected ${expected}, got ${actual}`);
+}
+
+for (const scale of [1, 0.8, 0.6]) {
+  await check(`progress dp, dots and resizing at host scale ${scale}`, async () => {
+    const { page, errors } = await setupComponents([
+      { name: "WearCircularProgressIndicator", props: { size: 80, stroke: 12, value: 65 } },
+      { name: "WearLinearProgressIndicator", props: { value: 100 } },
+      { name: "WearPageIndicator", props: { count: 4 } },
+    ], scale);
+    const ring = page.locator('.wear-progress[data-variant="circular"]');
+    const box = await ring.boundingBox();
+    near(box.width, 80);
+    near(box.height, 80);
+    near(await ring.locator(".wear-progress-active").evaluate((path) => {
+      const matrix = path.getScreenCTM();
+      return parseFloat(getComputedStyle(path).strokeWidth) * Math.hypot(matrix.a, matrix.b);
+    }), 12);
+
+    const line = page.locator(".wear-progress-line");
+    const track = await line.boundingBox();
+    const fill = await line.locator(".wear-progress-line-active").boundingBox();
+    near(track.width, 236);
+    near(fill.width, track.width);
+    near(fill.x, track.x);
+    assert.equal(await line.locator(".wear-progress-line-dot").count(), 0);
+
+    await page.evaluate(() => {
+      window.components[0].props.value = 1;
+      window.components[1].props.value = 65;
+    });
+    const dot = ring.locator(".wear-progress-dot");
+    await dot.waitFor();
+    const paint = await dot.evaluate((element) => ({
+      fill: getComputedStyle(element).fill,
+      stroke: getComputedStyle(element).stroke,
+      radius: element.r.baseVal.value,
+    }));
+    assert.notEqual(paint.fill, "none");
+    assert.equal(paint.stroke, "none");
+    assert.ok(paint.radius > 0 && paint.radius < 1);
+
+    await page.evaluate((scale) => {
+      const host = document.querySelector("#host");
+      host.style.width = `${192 / scale}px`;
+      host.style.height = `${192 / scale}px`;
+    }, scale);
+    await page.waitForFunction(() => {
+      const svg = document.querySelector(".wear-page-indicator");
+      return Math.abs(svg.viewBox.baseVal.width - 192) < 0.1;
+    });
+    const endDot = await line.locator(".wear-progress-line-dot").boundingBox();
+    const resized = await line.boundingBox();
+    near(resized.width, 188);
+    near(resized.x + resized.width - endDot.x - endDot.width, 4);
+    assert.deepEqual(errors, []);
+    await page.close();
+  });
+}
+
+for (const dir of ["ltr", "rtl"]) {
+  await check(`page and level directions and upright lower text ${dir}`, async () => {
+    const { page, errors } = await setupComponents([
+      { name: "WearPageIndicator", props: { count: 4, dir } },
+      { name: "WearLevelIndicator", props: { value: 65 } },
+      { name: "WearCurvedText", props: { text: "Bottom arc", position: "bottom" } },
+    ], 1, dir);
+    const indicator = page.locator(".wear-page-indicator");
+    const coordinates = () => indicator.locator(".wear-page-indicator-dot").evaluateAll((dots) =>
+      dots.map((dot) => {
+        const point = new DOMPoint(dot.cx.baseVal.value, dot.cy.baseVal.value).matrixTransform(dot.getScreenCTM());
+        return { x: point.x, y: point.y };
+      }),
+    );
+    const horizontal = await coordinates();
+    assert.equal(horizontal[0].x < horizontal[3].x, dir === "ltr");
+    const level = page.locator('.wear-progress[data-variant="level"] .wear-progress-active');
+    const side = await level.boundingBox();
+    assert.equal(side.x + side.width / 2 < 120, dir === "ltr");
+
+    await page.evaluate(() => {
+      window.components[0].props.orientation = "vertical";
+      window.components[1].props.side = "end";
+    });
+    const vertical = await coordinates();
+    assert.ok(vertical[0].y < vertical[3].y);
+    const otherSide = await level.boundingBox();
+    assert.equal(otherSide.x + otherSide.width / 2 < 120, dir === "rtl");
+    const rotation = await page.locator(".wear-curved-text text").evaluate((text) =>
+      text.getRotationOfChar(Math.floor(text.getNumberOfChars() / 2)),
+    );
+    assert.ok(Math.abs(((rotation + 540) % 360) - 180) < 20, `glyph rotation ${rotation}`);
+    assert.deepEqual(errors, []);
+    await page.close();
+  });
+}
+
+await check("small button faces, disabled slots and explicit type roles", async () => {
+  const { page, errors } = await setupComponents([
+    { name: "WearIconButton", props: { size: "extra-small" }, slots: { icon: "+" } },
+    { name: "WearIconButton", props: { size: "small" }, slots: { icon: "+" } },
+    { name: "WearFilledTonalButton", props: { disabled: true }, slots: { default: "Disabled", icon: "+", detail: "Details" } },
+    { name: "WearRadioButton", props: { modelValue: true, disabled: true }, slots: { default: "Selected" } },
+    { name: "WearText", props: { role: "titleSmall", variant: "display" }, slots: { default: "Title" } },
+  ]);
+  for (const [size, expected] of [["extra-small", 32], ["small", 48]]) {
+    const button = page.locator(`.wear-button[data-size="${size}"]`);
+    const target = await button.boundingBox();
+    const face = await button.locator(".wear-button-face").boundingBox();
+    near(target.width, 48);
+    near(target.height, 48);
+    near(face.width, expected);
+    near(face.height, expected);
+    near(face.x + face.width / 2, target.x + target.width / 2);
+    near(face.y + face.height / 2, target.y + target.height / 2);
+  }
+  const button = page.locator(".wear-button:disabled");
+  const content = await button.locator(".wear-button-face").evaluate((e) => getComputedStyle(e).color);
+  for (const selector of [".wear-button-icon", ".wear-button-detail"])
+    assert.equal(await button.locator(selector).evaluate((e) => getComputedStyle(e).color), content);
+  assert.equal(await button.locator(".wear-button-detail").evaluate((e) => getComputedStyle(e).opacity), "1");
+  const container = await button.locator(".wear-button-face").evaluate((e) => getComputedStyle(e).backgroundColor);
+  const radio = await page.locator(".wear-selection-mark").evaluate((e) => ({
+    border: getComputedStyle(e).borderColor,
+    dot: getComputedStyle(e, "::after").backgroundColor,
+  }));
+  assert.equal(radio.border, container);
+  assert.equal(radio.dot, container);
+  const text = await page.locator(".wear-text").evaluate((e) => ({
+    size: getComputedStyle(e).fontSize,
+    weight: getComputedStyle(e).fontWeight,
+  }));
+  assert.deepEqual(text, { size: "14px", weight: "550" });
+  assert.deepEqual(errors, []);
+  await page.close();
+});
 
 async function setup(
   section,
@@ -56,6 +239,19 @@ async function check(name, run) {
     failures.push(name);
     console.error(`FAIL ${name}\n${error.stack}`);
   }
+}
+
+for (const diameter of [192, 240]) {
+  await check(`catalog preserves progress sizes at ${diameter}dp`, async () => {
+    const { page, frame, errors } = await setup("progress", diameter);
+    for (const [label, size] of [["Activity", 80], ["Daily goals", 80], ["Loading activity", 24]]) {
+      const box = await frame.getByRole("progressbar", { name: label, exact: true }).boundingBox();
+      near(box.width, size);
+      near(box.height, size);
+    }
+    assert.deepEqual(errors, []);
+    await page.close();
+  });
 }
 
 async function swipe(page, from, to) {

@@ -46,7 +46,7 @@ import {
   WearLinearProgressIndicator,
   WearSegmentedCircularProgressIndicator,
   WearArcProgressIndicator,
-  WearLevelIndicator,
+  WearStepperLevelIndicator,
   WearPicker,
   WearPickerGroup,
   WearDatePicker,
@@ -77,12 +77,53 @@ import {
 } from "@hanhanawa/wear-m3e-vue";
 
 const query = new URLSearchParams(location.search);
+
+/**
+ * A demo brand palette, not an official one. Two input paths are exercised on
+ * purpose: the default passes a broad scheme, while `?theme=basic` passes only
+ * the four roles this catalog overrode before the audit and relies on
+ * `resolveColorScheme()` to derive `primaryDim`, the surface container ramp and
+ * the indicator tones. Both must produce a readable screen.
+ */
+const brand = {
+  primary: "#c4ec72",
+  onPrimary: "#253500",
+  primaryContainer: "#344b10",
+  onPrimaryContainer: "#e1f8b4",
+  secondary: "#b6d096",
+  secondaryContainer: "#36491b",
+  onSecondaryContainer: "#d7f0b6",
+  tertiary: "#8fd8d0",
+  tertiaryContainer: "#00504a",
+  onTertiaryContainer: "#aef4ec",
+  surfaceContainerLow: "#141a0c",
+  surfaceContainer: "#202618",
+  surfaceContainerHigh: "#2b3222",
+  onSurface: "#e1e5d4",
+  onSurfaceVariant: "#c1c9b5",
+  outline: "#8b9381",
+  outlineVariant: "#5e6655",
+  error: "#ff897d",
+  errorContainer: "#683127",
+  onErrorContainer: "#ffdad4",
+};
+const colors = computed(() =>
+  query.get("theme") === "basic"
+    ? {
+        primary: brand.primary,
+        onPrimary: brand.onPrimary,
+        primaryContainer: brand.primaryContainer,
+        onPrimaryContainer: brand.onPrimaryContainer,
+      }
+    : brand,
+);
 const categories = [
   ["buttons", "Buttons", "Actions & shapes"],
   ["selection", "Selection", "Switches, checks, radios"],
   ["cards", "Cards", "App, title & outlined"],
   ["slider", "Adjust", "Slider & stepper"],
-  ["progress", "Progress", "Rings, arcs & levels"],
+  ["progress", "Progress", "Rings & linear bars"],
+  ["levels", "Levels", "Stepper & level indicator"],
   ["pickers", "Pickers", "Date, time & duration"],
   ["dialogs", "Dialogs", "Confirm & communicate"],
   ["horizontal", "Horizontal pages", "Swipe between pages"],
@@ -107,6 +148,8 @@ const details = ref(0);
 const toggle = ref(false);
 const slider = ref(40);
 const stepper = ref(3);
+const level = ref(60);
+const levelSide = ref<"start" | "end">("start");
 const picker = ref<string | number>(2);
 const secondPicker = ref<string | number>("min");
 const date = ref("2024-01-31");
@@ -176,14 +219,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <WearMaterialTheme
-    :colors="{
-      primary: '#c4ec72',
-      onPrimary: '#253500',
-      primaryContainer: '#344b10',
-      onPrimaryContainer: '#e1f8b4',
-    }"
-  >
+  <WearMaterialTheme :colors="colors">
     <WearScaffold
       :round="query.get('round') !== 'false'"
       :host-scale="Number(query.get('scale')) || 1"
@@ -438,13 +474,7 @@ onUnmounted(() => {
                   label="Repetitions"
                   :min="1"
                   :max="5"
-                  ><template #default="{ value }"
-                    ><WearText variant="display">{{ value }}</WearText
-                    ><WearText as="div" variant="detail"
-                      >repetitions</WearText
-                    ></template
-                  ></WearStepper
-                ></WearListItem
+                /></WearListItem
               >
             </WearList></WearScreenScaffold
           >
@@ -462,15 +492,24 @@ onUnmounted(() => {
                 ><div class="gallery-rings">
                   <WearCircularProgressIndicator
                     :value="65"
+                    :size="80"
                     label="Activity"
                   /><WearSegmentedCircularProgressIndicator
                     :value="60"
+                    :size="80"
+                    stroke="small"
                     label="Daily goals"
                     :segments="5"
                   /></div
               ></WearListItem>
               <WearListItem
                 ><WearLinearProgressIndicator :value="65" label="Download"
+              /></WearListItem>
+              <WearListItem
+                ><WearLinearProgressIndicator
+                  :value="20"
+                  :stroke="8"
+                  label="Compact download"
               /></WearListItem>
               <WearListItem
                 ><WearListSubHeader>Loading</WearListSubHeader></WearListItem
@@ -485,6 +524,12 @@ onUnmounted(() => {
                 ><WearLinearProgressIndicator label="Syncing"
               /></WearListItem>
               <WearListItem
+                ><WearListSubHeader
+                  >Levels moved to their own screen: a full-screen arc needs
+                  its own space</WearListSubHeader
+                ></WearListItem
+              >
+              <WearListItem
                 ><WearPlaceholder :loading="loading" label="Loading card"
                   ><WearCard>Loaded</WearCard></WearPlaceholder
                 ></WearListItem
@@ -494,8 +539,33 @@ onUnmounted(() => {
                   >Toggle loading</WearButton
                 ></WearListItem
               > </WearList
-            ><WearLevelIndicator :value="65" label="Battery level"
-          /></WearScreenScaffold>
+          ></WearScreenScaffold>
+        </template>
+
+        <template #levels>
+          <WearScreenScaffold label="Level examples">
+            <div class="gallery-level">
+              <WearStepper
+                v-model="level"
+                label="Volume"
+                :min="0"
+                :max="100"
+                :step="5"
+              />
+              <div class="gallery-level-actions">
+                <WearCompactButton @click="levelSide = levelSide === 'start' ? 'end' : 'start'"
+                  >{{ levelSide === "start" ? "Start side" : "End side" }}</WearCompactButton
+                >
+              </div>
+            </div>
+            <WearStepperLevelIndicator
+              :value="level"
+              :min="0"
+              :max="100"
+              :side="levelSide"
+              label="Volume level"
+            />
+          </WearScreenScaffold>
         </template>
 
         <template #pickers>
@@ -880,8 +950,31 @@ onUnmounted(() => {
 }
 .gallery-rings {
   display: flex;
+  flex-wrap: wrap;
   gap: calc(16 * var(--wear-unit));
   justify-content: center;
   padding-block: calc(12 * var(--wear-unit));
+}
+/*
+ * A level indicator is a full-screen arc, so it gets a screen of its own and
+ * the content keeps a clear band on both sides: 72° of arc at radius
+ * (D - 2 - 6)/2 reaches about 24 dp in from the edge, and the stepper's own
+ * 60 dp control column stays inside the remainder.
+ */
+.gallery-level {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: stretch;
+  height: 100%;
+  padding-inline: calc(28 * var(--wear-unit));
+}
+.gallery-level-actions {
+  display: flex;
+  justify-content: center;
+  padding-block-end: calc(10 * var(--wear-unit));
+}
+.gallery-level-actions .wear-button {
+  inline-size: auto;
+  min-inline-size: calc(52 * var(--wear-unit));
 }
 </style>

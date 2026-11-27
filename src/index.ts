@@ -104,6 +104,9 @@ export const WearOutlinedIconButton = variant(
 );
 export const WearTextButton = variant(WearButton, "WearTextButton", {
   shape: "round",
+  // Transparent container with onSurface content, not the filled primary
+  // surface this alias inherited while it only set `shape`.
+  variant: "text",
 });
 export const WearEdgeButton = variant(WearButton, "WearEdgeButton", {
   shape: "edge",
@@ -146,8 +149,12 @@ export const WearSplitRadioButton = variant(
   "WearSplitRadioButton",
   { kind: "radio", split: true },
 );
-export const WearAppCard = variant(WearCard, "WearAppCard", {});
-export const WearTitleCard = variant(WearCard, "WearTitleCard", {});
+export const WearAppCard = variant(WearCard, "WearAppCard", {
+  layout: "app",
+});
+export const WearTitleCard = variant(WearCard, "WearTitleCard", {
+  layout: "title",
+});
 export const WearOutlinedCard = variant(WearCard, "WearOutlinedCard", {
   variant: "outlined",
 });
@@ -182,7 +189,9 @@ export const WearLevelIndicator = variant(
 export const WearStepperLevelIndicator = variant(
   WearProgressIndicator,
   "WearStepperLevelIndicator",
-  { variant: "level" },
+  // A stepper level maps a discrete value range onto the fraction, so it is
+  // not a bare alias of WearLevelIndicator. LevelIndicator.kt:107-175.
+  { variant: "level", stepper: true },
 );
 export const WearSuccessConfirmationDialog = variant(
   WearConfirmationDialog,
@@ -279,6 +288,38 @@ export {
   dispatchWearGesture,
   useWearRotary,
 } from "./input";
+
+/**
+ * Token tables and the arc geometry they rely on. Exported so a host can
+ * build its own drawing against the same contract, and so the numbers are
+ * testable without a browser.
+ */
+export {
+  wearColorRoles,
+  wearDefaultColorScheme,
+  resolveColorScheme,
+  colorSchemeVars,
+  wearTypeScale,
+  wearLegacyTypeAliases,
+  wearShapes,
+  wearMotion,
+  wearPadding,
+  wearProgress,
+  wearDisabledAlpha,
+  screenScaled,
+} from "./tokens";
+export {
+  gapSweep,
+  indicatorSegment,
+  circularGeometry,
+  segmentedGeometry,
+  linearGeometry,
+  levelGeometry,
+  pageIndicatorGeometry,
+  polar,
+  segmentPath,
+} from "./arcs";
+export { useLogicalSize, unitScale, screenRatio } from "./measure";
 export type {
   WearDirection,
   WearPage,
@@ -287,9 +328,26 @@ export type {
   WearScrollInfo,
   WearButtonVariant,
   WearTextVariant,
+  WearIndicatorSide,
   WearGestureAction,
   WearNavigationEntry,
 } from "./types";
+export type {
+  WearColorRole,
+  WearColorSchemeInput,
+  WearTypeRole,
+  WearTypeRoleName,
+  WearShapeRole,
+} from "./tokens";
+export type {
+  CircularGeometry,
+  IndicatorSegment,
+  LevelGeometry,
+  LinearGeometry,
+  PageIndicatorGeometry,
+  SegmentedPiece,
+  SegmentState,
+} from "./arcs";
 
 import "./style.css";
 import "./components.css";
