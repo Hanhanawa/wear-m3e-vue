@@ -1056,9 +1056,22 @@
   --wear-button-icon: var(--wear-color-primary);
   --wear-button-label: var(--wear-color-primary);
 }
+/*
+ * The control face is 60 x 48, so the row button's 52 dp minimum has to give
+ * way to it - otherwise the face overflows the box and the icon is no longer
+ * centred in the target the user hits.
+ */
 .wear-stepper-button.wear-button[data-shape="round"] .wear-button-face {
   border-radius: var(--wear-radius-full);
+  block-size: 100%;
+  min-block-size: 0;
   padding: calc(8 * var(--wear-unit));
+}
+.wear-stepper-button.wear-button .wear-button-icon,
+.wear-stepper-button.wear-button .wear-icon {
+  /* StepperDefaults.IconSize */
+  inline-size: calc(24 * var(--wear-unit));
+  block-size: calc(24 * var(--wear-unit));
 }
 .wear-stepper-button.wear-button:disabled .wear-button-face {
   background: var(--wear-paint-disabled-container);

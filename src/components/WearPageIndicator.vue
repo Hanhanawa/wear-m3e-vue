@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, inject, ref } from "vue";
 import { pageIndicatorGeometry } from "../arcs";
+import { appKey } from "../context";
 import { clamp, normalizedPage } from "../geometry";
 import { useLogicalSize } from "../measure";
 import { wearProgress } from "../tokens";
@@ -27,11 +28,15 @@ const props = withDefaults(
 
 const root = ref<Element>();
 const measured = useLogicalSize(root);
+/**
+ * Prefer the scaffold's measured screen, because the SVG is the only element
+ * here and it must not have to render first in order to know its own size.
+ */
+const app = inject(appKey, null);
 const diameter = computed(
   () =>
-    Math.min(measured.width.value || 0, measured.height.value || 0) ||
-    measured.width.value ||
-    0,
+    app?.diameter.value ||
+    Math.min(measured.width.value || 240, measured.height.value || 240),
 );
 
 const visible = computed(() => clamp(Math.floor(props.count) || 0, 0, 6));
@@ -90,7 +95,7 @@ const selected = computed(() => {
 
 <template>
   <svg
-    v-if="visible > 1 && diameter > 0"
+    v-if="visible > 1"
     ref="root"
     class="wear-page-indicator"
     :data-orientation="orientation"
