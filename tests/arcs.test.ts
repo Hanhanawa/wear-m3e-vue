@@ -12,10 +12,18 @@ import {
   colorSchemeVars,
   resolveColorScheme,
   screenScaled,
+  toneShift,
   wearColorRoles,
   wearProgress,
   wearTypeScale,
 } from "../src/tokens.ts";
+
+/** Relative luminance, used only to check the direction of a tonal shift. */
+function luminance(color: string): number {
+  const hex = color.slice(1);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
 
 /** Arc length covered by a given sweep at a given radius. */
 const arcLength = (degrees: number, radius: number) =>
@@ -271,6 +279,20 @@ test("a four-role brand input still resolves every consumable role", () => {
   assert.match(scheme.primaryDim, /^#[0-9a-f]{6}$/);
   // The neutral surfaces keep their own ramp, they are not the accent.
   assert.notEqual(scheme.surfaceContainerHigh, scheme.surfaceContainer);
+});
+
+test("tonal derivation moves along the ramp in the right direction", () => {
+  // The surface family is derived from one supplied surface, so a shift must
+  // actually change lightness - a broken round-trip here silently produced
+  // *lighter* "low" containers.
+  assert.equal(toneShift("#c4ec72", 0), "#c4ec72");
+  const base = luminance("#332e3c");
+  assert.ok(luminance(toneShift("#332e3c", -0.045)) < base);
+  assert.ok(luminance(toneShift("#332e3c", 0.055)) > base);
+  assert.ok(luminance(toneShift("#c4ec72", -0.09)) < luminance("#c4ec72"));
+  // Clamped, never out of gamut.
+  assert.match(toneShift("#ffffff", -0.5), /^#[0-9a-f]{6}$/);
+  assert.match(toneShift("#000000", 0.5), /^#[0-9a-f]{6}$/);
 });
 
 test("the legacy surface alias maps onto surfaceContainer", () => {

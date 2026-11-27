@@ -41,20 +41,36 @@ export function useLogicalSize(target: Ref<Element | undefined>): LogicalSize {
   const height = ref(0);
   let observer: ResizeObserver | undefined;
 
-  function read(node: Element | undefined) {
-    if (!node) return;
+  /**
+   * Layout size, never the *visual* size: `getBoundingClientRect()` includes
+   * the ancestor transform a transforming list applies, so a row scaled to
+   * 0.5 would report half its real width and every derived drawing (endpoint
+   * dots, arc radii) would shrink with it. `ResizeObserverEntry.contentRect`
+   * and `clientWidth` are both pre-transform.
+   */
+  function apply(boxWidth: number, boxHeight: number, node: Element) {
     const scale = unitScale(node);
-    const box = node.getBoundingClientRect();
-    // A detached or hidden node measures 0; keep the last real size.
-    if (box.width > 0) width.value = box.width * scale;
-    if (box.height > 0) height.value = box.height * scale;
+    if (boxWidth > 0) width.value = boxWidth * scale;
+    if (boxHeight > 0) height.value = boxHeight * scale;
+  }
+
+  function read(node: Element) {
+    // SVG elements have no clientWidth; the observer covers those.
+    const box = node as HTMLElement;
+    apply(
+      typeof box.clientWidth === "number" ? box.clientWidth : 0,
+      typeof box.clientHeight === "number" ? box.clientHeight : 0,
+      node,
+    );
   }
 
   function observe(node: Element | undefined) {
     observer?.disconnect();
     observer = undefined;
     if (!node || typeof ResizeObserver === "undefined") return;
-    observer = new ResizeObserver(() => read(node));
+    observer = new ResizeObserver(([entry]) =>
+      apply(entry.contentRect.width, entry.contentRect.height, node),
+    );
     read(node);
   }
 

@@ -144,9 +144,11 @@ function hexToOklab(color: string): [number, number, number] | null {
 }
 
 function oklabToHex([l, a, b]: [number, number, number]): string {
-  const x = l + 0.3963377774 * a + 0.2158037573 * b;
-  const y = l - 0.1055613458 * a - 0.0638541729 * b;
-  const z = l - 0.0894841775 * a - 1.291485548 * b;
+  // The forward pass took a cube root of the LMS responses, so the inverse has
+  // to cube them again before converting back to linear sRGB.
+  const x = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const y = (l - 0.1055613458 * a - 0.0638541729 * b) ** 3;
+  const z = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
   const [r, g, bl] = [
     4.0767416621 * x - 3.3077115913 * y + 0.2309699292 * z,
     -1.2684380046 * x + 2.6097574011 * y - 0.3413193965 * z,
